@@ -35,3 +35,39 @@ export interface GroupApiResponse {
   data: Group[];
   pagination: Pagination;
 }
+
+
+// Root response
+export interface ViewGroupResponse {
+  code: number;
+  msg: string;
+  data: ViewGroupItem[];
+  pagination: Pagination;
+}
+
+// Each data item
+export interface ViewGroupItem {
+  group_id: string;
+  group_name: string;
+  description: string | null;
+  is_active: boolean;
+  user_id: string;
+  name: string;
+  email: string | null;
+  role: string;
+  wiegand_flag: number;
+  admin_auth: number;
+  is_allowed: boolean;
+  added_at: string;
+  id: string;
+}
+
+// Pagination object
+export interface ViewPagination {
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+  has_next: boolean;
+  has_prev: boolean;
+}

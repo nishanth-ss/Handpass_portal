@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
-import type { UserResponse } from "../types/userTypes";
+import type { SingleUserWithGroupsResponse, UserResponse } from "../types/userTypes";
 
 export function useUsers(page: number = 1, limit: number = 5,search?: string) {
  return useQuery<UserResponse>({
@@ -14,6 +14,19 @@ export function useUsers(page: number = 1, limit: number = 5,search?: string) {
   keepPreviousData: true,
   retry: false,
 } as any);
+}
+
+export function useSingleUser(id: string | null | undefined) {
+  return useQuery<SingleUserWithGroupsResponse>({
+    queryKey: ["singleUser", id],
+    queryFn: async () => {
+      const res = await api.get<SingleUserWithGroupsResponse>(`/api/users/with-group/${id}`);
+      return res.data;
+    },
+    enabled: !!id, // important: only fetch when id exists
+    staleTime: 1000 * 60,
+    retry: false,
+  });
 }
 
 export const useUpdateUser = () => {

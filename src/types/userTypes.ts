@@ -27,3 +27,27 @@ export type UserResponse = {
   data: UserData[];
   pagination: UserPagination;
 };
+
+
+// single user
+export interface SingleUserWithGroupsResponse {
+  code: number;
+  msg: string;
+  data: UserWithGroups;
+}
+
+export interface UserWithGroups {
+  id: string;
+  name: string;
+  email: string | null;
+  password_hash: string | null;
+  sn: string | null;
+  user_id: string | null;
+  role: string;
+  image_left: string | null;
+  image_right: string | null;
+  wiegand_flag: number;
+  admin_auth: number;
+  created_at: string;
+  updated_at: string;
+}

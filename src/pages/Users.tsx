@@ -4,10 +4,11 @@ import { CommonLoader } from '../components/common/CommonLoader';
 import { useState } from 'react';
 import { Button } from '@mui/material';
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import { Edit, Trash } from 'lucide-react';
+import { Edit, Eye, Trash } from 'lucide-react';
 import { EditUserDialog } from '../components/user/EditUserDialog';
 import { DeleteConfirmDialog } from '../components/common/DeleteConfirmDialog';
 import { useQueryClient } from '@tanstack/react-query';
+import UserDetailsDialog from '../components/user/UserDetailsDialog';
 
 const Users = () => {
   const [page, setPage] = useState(0);
@@ -15,6 +16,9 @@ const Users = () => {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const deleteMutation = useDeleteUser(); // FIX HOOK HERE
   const queryClient = useQueryClient();
+  const [userId, setUserId] = useState("");
+  const [open, setOpen] = useState(false);
+
 
   const limit = 10;
   const { data, isLoading, isError, isFetching } = useUsers(page + 1, limit);
@@ -43,6 +47,9 @@ const Users = () => {
       sortable: false,
       renderCell: (params) => (
         <div>
+          <Button variant="text" size="small" onClick={() => handleView(params.row?.id)}>
+            <Eye />
+          </Button>
           <Button variant="text" size="small" onClick={() => handleEdit(params.row)}>
             <Edit />
           </Button>
@@ -61,8 +68,12 @@ const Users = () => {
     create_at: user.created_at
   }));
 
+  const handleView = (id: string) => {
+    setUserId(id);
+    setOpen(true);
+  }
 
- const handleConfirmDelete = () => {
+  const handleConfirmDelete = () => {
     if (!selectedId) return;
 
     deleteMutation.mutate(String(selectedId), {
@@ -123,6 +134,13 @@ const Users = () => {
         onConfirm={handleConfirmDelete}
         // loading={deleteMutation.isLoading}
         message="Are you sure you want to delete this user?"
+      />
+
+      {/* view user */}
+      <UserDetailsDialog
+        open={open}
+        onClose={() => setOpen(false)}
+        userId={userId}
       />
     </div>
   );

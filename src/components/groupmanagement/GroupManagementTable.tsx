@@ -10,7 +10,6 @@ const GroupManagementTable = () => {
 
     // Dialog state
     const [dialogOpen, setDialogOpen] = useState(false);
-    const [selectedGroupDevices, setSelectedGroupDevices] = useState<Group["devices"]>([]);
     const [selectedGroupName, setSelectedGroupName] = useState("");
     const [selectGroupID,setSelectedGroupID] = useState("");
 
@@ -54,9 +53,7 @@ const GroupManagementTable = () => {
         },
     ];
 
-
     const handleViewClick = (group: Group) => {
-        setSelectedGroupDevices(group.devices || []);
         setSelectedGroupName(group.group_name);
         setSelectedGroupID(group.id)
         setDialogOpen(true);
@@ -65,7 +62,7 @@ const GroupManagementTable = () => {
     return (
         <div style={{ height: 500, width: "100%" }}>
             <DataGrid
-                rows={rows.map((r) => ({ ...r, id: r.id }))}
+                rows={rows?.map((r) => ({ ...r, id: r.id }))}
                 columns={groupColumns}
                 pagination
                 paginationMode="server"
@@ -88,7 +85,6 @@ const GroupManagementTable = () => {
             <GroupDevicesDialog
                 open={dialogOpen}
                 onClose={() => setDialogOpen(false)}
-                devices={selectedGroupDevices}
                 groupName={selectedGroupName}
                 groupID={selectGroupID}
             />

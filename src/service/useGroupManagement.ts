@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../lib/api";
-import type { GroupApiResponse } from "../types/groupManagement";
+import type { GroupApiResponse, ViewGroupResponse } from "../types/groupManagement";
 
 export function useGroupManagent(page = 1,limit=10) {
     return useQuery({
@@ -17,7 +17,8 @@ export function useGroupManagent(page = 1,limit=10) {
 export function useGroupViewMember(page = 1,limit=10, id: string) {
     return useQuery({
         queryKey: ["groupViewManagement", page,limit,id],
-        queryFn: async (): Promise<GroupApiResponse> => {
+        enabled: !!id,
+        queryFn: async (): Promise<ViewGroupResponse> => {
             const res = await api.get(`/api/group/group-members/${id}?page=${page}&limit=${limit}`);
             return res.data;
         },
