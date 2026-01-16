@@ -21,8 +21,11 @@ export function useUpdateDevice() {
 
   return useMutation({
     mutationFn: async ({ id, name }: { id: string; name: string }) => {
-      return api.put(`/api/users/update-user/${id}`, {
-        name,
+      // return api.put(`/api/users/update-user/${id}`, {
+      //   name,
+      // });
+      return api.put(`/v1/connect/${id}`, {
+        device_name:name,
       });
     },
 
