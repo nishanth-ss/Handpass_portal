@@ -1,17 +1,43 @@
 import { useState } from "react";
 import { DataGrid, type GridRenderCellParams, type GridPaginationModel } from "@mui/x-data-grid";
-import { useGroupManagent } from "../../service/useGroupManagement"; // your API hook
+import { useCreateGroup, useGroupManagent } from "../../service/useGroupManagement"; // your API hook
 import type { Group } from "../../types/groupManagement";
 import GroupDevicesDialog from "./GroupDevicesDialog";
+import { Button } from "@mui/material";
+import { useForm } from "react-hook-form";
+import GroupManagementModal from "./GroupManagementModal";
+import { useDevices } from "../../service/useDevice";
 
 const GroupManagementTable = () => {
+
+    const {
+        register: registerGroup,
+        handleSubmit: handleSubmitGroup,
+        reset: resetGroup,
+        control: controlGroup,
+        formState: { errors: groupErrors }
+    } = useForm({
+        defaultValues: {
+            group_name: "",
+            description: "",
+            device_id: "",
+            is_active: true
+        }
+    });
+
+    // add group
+    const [groupDialog, setGroupDialog] = useState(false);
+    const [editingGroup, setEditingGroup] = useState<Group | null>(null);
+    const { data: devices } = useDevices();
+    const createGroup = useCreateGroup();
+
     const [page, setPage] = useState(0); // 0-indexed for MUI
     const [limit, setLimit] = useState(10);
 
     // Dialog state
     const [dialogOpen, setDialogOpen] = useState(false);
     const [selectedGroupName, setSelectedGroupName] = useState("");
-    const [selectGroupID,setSelectedGroupID] = useState("");
+    const [selectGroupID, setSelectedGroupID] = useState("");
 
     // Fetch groups with pagination
     const { data, isFetching } = useGroupManagent(page + 1, limit); // Assuming API accepts page & limit
@@ -59,37 +85,76 @@ const GroupManagementTable = () => {
         setDialogOpen(true);
     };
 
+    // add group
+    const openAddGroup = () => {
+        resetGroup({
+            group_name: "",
+            description: "",
+            device_id: "",
+            is_active: true
+        });
+        setEditingGroup(null);
+        setGroupDialog(true);
+    };
+
+    const saveGroup = (formData: any) => {
+        const payload: any = {
+            group_name: formData.group_name,
+            description: formData.description,
+            device_id: formData.device_id,
+            is_active: formData.is_active
+        };
+        createGroup.mutate(payload)
+    }
+
     return (
-        <div style={{ height: 500, width: "100%" }}>
-            <DataGrid
-                rows={rows?.map((r) => ({ ...r, id: r.id }))}
-                columns={groupColumns}
-                pagination
-                paginationMode="server"
-                rowCount={data?.pagination?.total ?? 0}
-                pageSizeOptions={[5, 10, 20]}
-                paginationModel={{ page, pageSize: limit }}
-                onPaginationModelChange={(model: GridPaginationModel) => {
-                    setPage(model.page);
-                    setLimit(model.pageSize);
-                }}
-                loading={isFetching}
-                disableRowSelectionOnClick
-                disableColumnSelector
-                sx={{
-                    "& .MuiDataGrid-cell:focus": { outline: "none" },
-                }}
-            />
+        <>
+            <div className="flex justify-end">
+                <Button className="bg-primary! text-white! mb-2!" onClick={openAddGroup}>Add Group</Button>
+            </div>
+            <div style={{ height: 500, width: "100%" }}>
+                <DataGrid
+                    rows={rows?.map((r) => ({ ...r, id: r.id }))}
+                    columns={groupColumns}
+                    pagination
+                    paginationMode="server"
+                    rowCount={data?.pagination?.total ?? 0}
+                    pageSizeOptions={[5, 10, 20]}
+                    paginationModel={{ page, pageSize: limit }}
+                    onPaginationModelChange={(model: GridPaginationModel) => {
+                        setPage(model.page);
+                        setLimit(model.pageSize);
+                    }}
+                    loading={isFetching}
+                    disableRowSelectionOnClick
+                    disableColumnSelector
+                    sx={{
+                        "& .MuiDataGrid-cell:focus": { outline: "none" },
+                    }}
+                />
 
-            {/* Device dialog */}
-            <GroupDevicesDialog
-                open={dialogOpen}
-                onClose={() => setDialogOpen(false)}
-                groupName={selectedGroupName}
-                groupID={selectGroupID}
-            />
+                {/* Device dialog */}
+                <GroupDevicesDialog
+                    open={dialogOpen}
+                    onClose={() => setDialogOpen(false)}
+                    groupName={selectedGroupName}
+                    groupID={selectGroupID}
+                />
 
-        </div>
+            </div>
+
+            <GroupManagementModal
+                open={groupDialog}
+                onClose={() => setGroupDialog(false)}
+                editingGroup={!!editingGroup}
+                devices={devices?.data as any}
+                controlGroup={controlGroup}
+                registerGroup={registerGroup}
+                groupErrors={groupErrors}
+                handleSubmitGroup={handleSubmitGroup}
+                saveGroup={saveGroup}
+            />
+        </>
     );
 };
 
