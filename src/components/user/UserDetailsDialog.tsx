@@ -20,6 +20,11 @@ const UserDetailsDialog: React.FC<UserDetailsDialogProps> = ({ open, onClose, us
   const { data, isLoading } = useSingleUser(userId);
   const user = data?.data;
 
+  const normalizeBase64 = (img: string) => {
+  if (!img) return "";
+  return img.startsWith("data:image") ? img : `data:image/png;base64,${img}`;
+};
+
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
       <DialogTitle className="flex justify-between items-center">
@@ -53,7 +58,7 @@ const UserDetailsDialog: React.FC<UserDetailsDialogProps> = ({ open, onClose, us
                   <Card className="shadow-md">
                     <CardMedia
                       component="img"
-                      image={user.image_left}
+                      image={normalizeBase64(user.image_left)}
                       alt="Left"
                       height={200}
                     />
@@ -63,7 +68,7 @@ const UserDetailsDialog: React.FC<UserDetailsDialogProps> = ({ open, onClose, us
                   <Card className="shadow-md">
                     <CardMedia
                       component="img"
-                      image={user.image_right}
+                      image={normalizeBase64(user.image_right)}
                       alt="Right"
                       height={200}
                     />

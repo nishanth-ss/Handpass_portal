@@ -3,6 +3,7 @@ import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import Box from '@mui/material/Box';
 import GroupManagementTable from '../components/groupmanagement/GroupManagementTable';
+import GroupRelatedUsers from '../components/groupmanagement/GroupRelatedUsers';
 
 // TabPanel Component
 function CustomTabPanel(props: { children?: React.ReactNode; value: number; index: number }) {
@@ -55,7 +56,7 @@ export default function BasicTabs() {
 
       <CustomTabPanel value={value} index={1}>
         {/* Render your GroupManagement component */}
-        <div>Dashboard Content Here1</div>
+        <GroupRelatedUsers />
       </CustomTabPanel>
     </Box>
   );

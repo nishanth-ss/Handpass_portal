@@ -51,3 +51,36 @@ export interface UserWithGroups {
   created_at: string;
   updated_at: string;
 }
+
+
+// user related group
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  sn: string | null;
+  admin_auth?: number;
+  user_id?: string;
+  wiegand_flag?: number;
+  created_at?: string;
+  updated_at?: string;
+  group_count?: string;
+  groups?: unknown[];
+}
+
+export interface Pagination {
+  has_next: boolean;
+  has_prev: boolean;
+  limit: number;
+  page: number;
+  total: number;
+  total_pages: number;
+}
+
+export interface UserRelatedResponse {
+  code: number;
+  msg: string;
+  data: User[];
+  pagination: Pagination;
+}

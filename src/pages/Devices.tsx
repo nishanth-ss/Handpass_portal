@@ -60,9 +60,9 @@ const Devices = () => {
       <h1 className='text-primary font-extrabold text-4xl mb-2'>Device Management</h1>
       <div className='flex items-center justify-between'>
         <p>Manage physical access terminals and cameras.</p>
-        <Button variant="contained" className='bg-primary!' startIcon={<TiPlus />}>
+        {/* <Button variant="contained" className='bg-primary!' startIcon={<TiPlus />}>
           Register Device
-        </Button>
+        </Button> */}
       </div>
 
       <div className="p-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">

@@ -90,9 +90,9 @@ const Users = () => {
 
       <div className='flex items-center justify-between mb-4'>
         <p>Manage physical access terminals and cameras.</p>
-        <Button variant="contained" className='bg-primary!' startIcon={<TiPlus />}>
+        {/* <Button variant="contained" className='bg-primary!' startIcon={<TiPlus />}>
           Add New User
-        </Button>
+        </Button> */}
       </div>
 
       <div style={{ height: 650, width: "100%" }}>

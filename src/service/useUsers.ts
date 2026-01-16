@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
-import type { SingleUserWithGroupsResponse, UserResponse } from "../types/userTypes";
+import type { SingleUserWithGroupsResponse, UserRelatedResponse, UserResponse } from "../types/userTypes";
 
 export function useUsers(page: number = 1, limit: number = 5,search?: string) {
  return useQuery<UserResponse>({
@@ -58,5 +58,74 @@ export function useDeleteUser() {
     onError: (err: any) => {
       console.error("Delete failed:", err);
     },
+  });
+}
+
+
+// `/api/group/members/${groupId}`
+export function useFetchUserWithGroup({page = 1,limit = 10}) {
+  return useQuery<UserRelatedResponse>({
+    queryKey: ["getUserWithRelatedGroup",page,limit],
+    queryFn: async () => {
+      const res = await api.get<UserRelatedResponse>(`/api/users/with-group`);
+      return res.data;
+    },
+    staleTime: 1000 * 60,
+    retry: false,
+  });
+}
+
+export function useDeleteGroupForThatUser() {
+  const queryClient = useQueryClient();
+
+  // DO NOT type the return value
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/api/group/members/${id}`),
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["getUserWithRelatedGroup"], exact: false });
+    },
+
+    onError: (err: any) => {
+      console.error("Delete failed:", err);
+    },
+  });
+}
+
+// /api/users/with-group/
+export function useDeleteUserWithGroup() {
+  const queryClient = useQueryClient();
+
+  // DO NOT type the return value
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/api/users/with-group/${id}`),
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["getUserWithRelatedGroup"], exact: false });
+    },
+
+    onError: (err: any) => {
+      console.error("Delete failed:", err);
+    },
+  });
+}
+
+interface CreateGroupPayload {
+  group_name: string;
+  description?: string;
+}
+
+export function useCreateGroup() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: any) => {
+      const res = await api.post("/api/group/add-group", payload);
+      return res.data;
+    },
+    onSuccess: () => {
+      // Refetch user list after creation
+      queryClient.invalidateQueries({ queryKey: ["getUserWithRelatedGroup"] });
+    }
   });
 }
