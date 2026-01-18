@@ -32,7 +32,11 @@ const Users = () => {
   };
 
   const columns: GridColDef[] = [
-    { field: "name", headerName: "Name", flex: 1 },
+    { field: "username", headerName: "Name", flex: 1,
+      renderCell: (param)=>{
+        return <h1>{param.row.name} - {param.row.sn}</h1>
+      }
+     },
     { field: "email", headerName: "Email", flex: 1 },
     {
       field: "created_at", headerName: "Created At", flex: 1,
@@ -65,7 +69,8 @@ const Users = () => {
     id: user.id,
     name: user.name,
     email: user.email,
-    create_at: user.created_at
+    create_at: user.created_at,
+    sn: user?.sn
   }));
 
   const handleView = (id: string) => {

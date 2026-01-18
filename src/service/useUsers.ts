@@ -80,7 +80,9 @@ export function useDeleteGroupForThatUser() {
 
   // DO NOT type the return value
   return useMutation({
-    mutationFn: (id: string) => api.delete(`/api/group/members/${id}`),
+    mutationFn: ({ groupId, userId }: { groupId: string; userId: any }) => {
+      
+      return api.delete(`/api/group/members/${groupId}?user_id=${userId}`)},
 
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["getUserWithRelatedGroup"], exact: false });

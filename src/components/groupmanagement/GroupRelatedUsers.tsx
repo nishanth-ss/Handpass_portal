@@ -20,9 +20,11 @@ const GroupRelatedUsers = () => {
     const createGroupForUser = useCreateGroup();
 
     const rows = data?.data ?? [];
+    console.log(deviceOption);
+    
     const groupOptions = deviceOption?.data?.map((g: any) => ({
         id: g.id,
-        label: g.group_name
+        label: g.device_name
     })) ?? [];
 
 
@@ -39,17 +41,18 @@ const GroupRelatedUsers = () => {
             flex: 1,
             sortable: false,
             renderCell: (params: any) => {
-                const groups = params.row.groups ?? [];
+                const groups = params.row.devices ?? [];
+                
                 if (groups.length === 0) return "-";
 
                 return (
                     <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
                         {groups.map((val: any, index: number) => (
-                            <div key={val.group_id} style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                                {index + 1}. {val.group_name}
+                            <div key={val.id} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                                {index + 1}. {val.device_name} ({val.sn})
                                 <span
                                     style={{ cursor: "pointer", color: "red" }}
-                                    onClick={() => handleDeleteGroupByUser(val.group_id)}
+                                    onClick={() => handleDeleteGroupByUser(val.id,params.row.id)}
                                 >
                                     <IoCloseCircle />
                                 </span>
@@ -80,16 +83,18 @@ const GroupRelatedUsers = () => {
     const handleDelete = (id: string) => {
         deleteUserFromTheGroupMutation.mutate(String(id));
     };
-    const handleDeleteGroupByUser = async (groupId: string) => {
-        deleteMutation.mutate(String(groupId));
+    const handleDeleteGroupByUser = async (groupId: string,userId:any) => {       
+        deleteMutation.mutate({groupId:String(groupId),userId});
     };
 
     const openEditUser = (row: any) => {
+        console.log(row);
+        
         setSelectedUser(row);
         setSelectedGroups(
-            row.groups?.map((g: any) => ({
-                id: g.common_group,
-                label: g.group_name
+            row.devices?.map((g: any) => ({
+                id: g.id,
+                label: g.name
             })) ?? []
         );
         // preload existing groups
@@ -127,6 +132,7 @@ const GroupRelatedUsers = () => {
                 disableRowSelectionOnClick
                 disableColumnSelector
                  getRowHeight={() => 'auto'}
+                getRowId={(row) => row.user_id ?? `temp-${Math.random()}`}
                 sx={{
                     "& .MuiDataGrid-cell:focus": { outline: "none" },
                 }}

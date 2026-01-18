@@ -45,11 +45,11 @@ const GroupManagementTable = () => {
 
     const groupColumns = [
         {
-            field: "group_name",
+            field: "device_name",
             headerName: "Group Name",
             flex: 1,
             renderCell: (params: GridRenderCellParams<Group>) => {
-                const sn = params.row.devices?.[0]?.sn || "No SN";
+                const sn = params.row?.sn || "No SN";
                 return (
                     <div style={{ display: "flex", flexDirection: "column" }}>
                         <span>{params.value} - <strong>{sn}</strong></span>

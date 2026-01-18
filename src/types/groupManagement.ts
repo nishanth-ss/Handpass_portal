@@ -13,6 +13,7 @@ export interface Group {
   group_name: string;
   description: string;
   is_active: boolean;
+  sn: string;
   created_at: string; // ISO date string
   updated_at: string; // ISO date string
   devices: GroupDevice[];
