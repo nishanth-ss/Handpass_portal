@@ -37,6 +37,11 @@ const Users = () => {
         return <h1>{param.row.name} - {param.row.sn}</h1>
       }
      },
+     { field: "userId", headerName: "User ID", flex: 1,
+      renderCell: (param)=>{
+        return <h1>{param.row.user_id}</h1>
+      }
+     },
     { field: "email", headerName: "Email", flex: 1 },
     {
       field: "created_at", headerName: "Created At", flex: 1,
@@ -69,6 +74,7 @@ const Users = () => {
     id: user.id,
     name: user.name,
     email: user.email,
+    user_id: user.user_id,
     create_at: user.created_at,
     sn: user?.sn
   }));

@@ -49,7 +49,7 @@ const GroupRelatedUsers = () => {
                     <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
                         {groups.map((val: any, index: number) => (
                             <div key={val.id} style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                                {index + 1}. {val.device_name} ({val.sn})
+                                {index + 1}. {val.name} ({val.sn})
                                 <span
                                     style={{ cursor: "pointer", color: "red" }}
                                     onClick={() => handleDeleteGroupByUser(val.id,params.row.id)}
@@ -87,9 +87,7 @@ const GroupRelatedUsers = () => {
         deleteMutation.mutate({groupId:String(groupId),userId});
     };
 
-    const openEditUser = (row: any) => {
-        console.log(row);
-        
+    const openEditUser = (row: any) => {        
         setSelectedUser(row);
         setSelectedGroups(
             row.devices?.map((g: any) => ({
@@ -100,6 +98,10 @@ const GroupRelatedUsers = () => {
         // preload existing groups
         setOpenModal(true);
     };
+
+    const filteredOptions = groupOptions.filter(
+  (opt: any) => !selectedGroups.some((g) => g.id === opt.id)
+);
 
     const handleSave = () => {
         const payload = {
@@ -145,7 +147,7 @@ const GroupRelatedUsers = () => {
                     <Autocomplete
                         multiple
                         disableCloseOnSelect
-                        options={groupOptions}
+                        options={filteredOptions}
                         value={selectedGroups}
                         getOptionLabel={(option: any) => option.label}
                         onChange={(event, newValue) => setSelectedGroups(newValue)}

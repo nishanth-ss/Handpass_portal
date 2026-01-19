@@ -44,6 +44,9 @@ export interface ViewGroupResponse {
   msg: string;
   data: ViewGroupItem[];
   pagination: Pagination;
+  device: [
+    {device_name: string}
+  ]
 }
 
 // Each data item

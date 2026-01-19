@@ -41,7 +41,7 @@ export default function BasicTabs() {
     <Box sx={{ width: '100%' }}>
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
         <Tabs value={value} onChange={handleChange} aria-label="basic tabs example">
-          <Tab label="Group Management" className='text-primary! font-extrabold!' {...a11yProps(0)} />
+          <Tab label="Device Management" className='text-primary! font-extrabold!' {...a11yProps(0)} />
           <Tab label="Group Management Users" className='text-primary! font-extrabold!' {...a11yProps(1)} />
         </Tabs>
       </Box>

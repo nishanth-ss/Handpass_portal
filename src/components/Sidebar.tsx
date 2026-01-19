@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, Network, Clock, FileText } from "lucide-react";
+import { LayoutDashboard, Users, Network, Clock, FileText, Settings } from "lucide-react";
 import { MonitorSmartphone } from "lucide-react";
 import { IoHardwareChipSharp } from "react-icons/io5";
 import { FaLayerGroup as Group } from "react-icons/fa";
@@ -16,6 +16,7 @@ export const NAV_ITEMS = [
     { label: "Reports", href: "/reports", icon: FileText },
     { label: "Group Management", href: "/group-management", icon: Group },
     { label: "Firmware Check", href: "/firm-check", icon: IoHardwareChipSharp },
+    { label: "Settings", href: "/settings", icon: Settings },
 ];
 
 export function Sidebar() {

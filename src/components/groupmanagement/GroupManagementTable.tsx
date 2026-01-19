@@ -3,10 +3,10 @@ import { DataGrid, type GridRenderCellParams, type GridPaginationModel } from "@
 import { useCreateGroup, useGroupManagent } from "../../service/useGroupManagement"; // your API hook
 import type { Group } from "../../types/groupManagement";
 import GroupDevicesDialog from "./GroupDevicesDialog";
-import { Button } from "@mui/material";
 import { useForm } from "react-hook-form";
 import GroupManagementModal from "./GroupManagementModal";
 import { useDevices } from "../../service/useDevice";
+import { Eye } from "lucide-react";
 
 const GroupManagementTable = () => {
 
@@ -49,10 +49,22 @@ const GroupManagementTable = () => {
             headerName: "Group Name",
             flex: 1,
             renderCell: (params: GridRenderCellParams<Group>) => {
+                return (
+                    <div style={{ display: "flex", flexDirection: "column" }}>
+                        <span>{params.value}</span>
+                    </div>
+                );
+            },
+        },
+         {
+            field: "device_sn",
+            headerName: "Serial No",
+            flex: 1,
+            renderCell: (params: GridRenderCellParams<Group>) => {
                 const sn = params.row?.sn || "No SN";
                 return (
                     <div style={{ display: "flex", flexDirection: "column" }}>
-                        <span>{params.value} - <strong>{sn}</strong></span>
+                        <strong>{sn}</strong>
                     </div>
                 );
             },
@@ -74,7 +86,9 @@ const GroupManagementTable = () => {
             flex: 1,
             renderCell: (params: GridRenderCellParams<Group>) => (
                 <button className="text-blue-600 hover:underline" onClick={() => handleViewClick(params.row)}
-                >View</button>
+            >
+                 <Eye />
+            </button>
             ),
         },
     ];
@@ -109,9 +123,9 @@ const GroupManagementTable = () => {
 
     return (
         <>
-            <div className="flex justify-end">
+            {/* <div className="flex justify-end">
                 <Button className="bg-primary! text-white! mb-2!" onClick={openAddGroup}>Add Group</Button>
-            </div>
+            </div> */}
             <div style={{ height: 500, width: "100%" }}>
                 <DataGrid
                     rows={rows?.map((r) => ({ ...r, id: r.id }))}

@@ -19,7 +19,7 @@ const GroupDevicesDialog: React.FC<GroupDevicesDialogProps> = ({
     groupID
 }) => {
     const columns: GridColDef[] = [
-        { field: "group_name", headerName: "Group Name", flex: 1 },
+        // { field: "group_name", headerName: "Group Name", flex: 1 },
         { field: "name", headerName: "User Name", flex: 1 },
         {
             field: "wiegand_flag",
@@ -37,11 +37,13 @@ const GroupDevicesDialog: React.FC<GroupDevicesDialogProps> = ({
 
     const rows: ViewGroupItem[] = data?.data ?? [];
     const total = data?.pagination?.total ?? 0;
+    const groupNameDevice = data?.device?.[0]?.device_name;
+    
 
     return (
         <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
             <DialogTitle>
-                Members in {groupName}
+                Members in {groupNameDevice}
                 <IconButton
                     aria-label="close"
                     onClick={onClose}
