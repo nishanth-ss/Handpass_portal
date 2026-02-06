@@ -20,7 +20,6 @@ const GroupRelatedUsers = () => {
     const createGroupForUser = useCreateGroup();
 
     const rows = data?.data ?? [];
-    console.log(deviceOption);
     
     const groupOptions = deviceOption?.data?.map((g: any) => ({
         id: g.id,

@@ -42,7 +42,7 @@ export function useDeleteDevice() {
 
   // DO NOT type the return value
   return useMutation({
-    mutationFn: (id: string) => api.delete(`/api/devices/${id}`),
+    mutationFn: (id: string) => api.delete(`/v1/connect/${id}`),
 
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["devices"] });

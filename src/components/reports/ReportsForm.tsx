@@ -18,7 +18,7 @@ type ReportsFormProps = {
 
 const schema = yup.object({
     sn: yup.string().nullable(),
-    name: yup.string().nullable(),
+    name: yup.object().nullable(),
     start_date: yup.date().nullable(),
     end_date: yup
         .date()

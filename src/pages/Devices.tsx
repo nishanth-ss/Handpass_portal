@@ -27,7 +27,6 @@ const Devices = () => {
       { id, name },
       {
         onSuccess: () => {
-          console.log("Updated successfully");
           setOpen(false);
           setSelected(null);
         },
