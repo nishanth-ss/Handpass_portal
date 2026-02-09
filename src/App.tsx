@@ -27,6 +27,7 @@ const Reports = lazy(() => import("./pages/Reports"));
 const GroupManagement = lazy(() => import("./pages/GroupManagement"));
 const FirmwareCheck = lazy(() => import("./pages/FirmwareCheck"));
 const LoginForm = lazy(() => import("./pages/Login"));
+const AttenenceModule = lazy(() => import("./pages/AttenenceModule"));
 const Settings = lazy(() => import("./pages/Settings"));
 
 function App() {
@@ -59,7 +60,7 @@ function App() {
                   <Route path="/reports" element={<Reports />} />
                   <Route path="/group-management" element={<GroupManagement />} />
                   <Route path="/firm-check" element={<FirmwareCheck />} />
-                  <Route path="/settings" element={<Settings />} />
+                  <Route path="/settings" element={<AttenenceModule />} />
                 </Route>
               </Route>
 
