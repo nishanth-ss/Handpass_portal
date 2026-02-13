@@ -1,6 +1,6 @@
 import { QueryClient, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
-import type { AttendanceResponse } from "../types/settingTypes";
+import type { AttendanceResponse, ShiftConfig } from "../types/settingTypes";
 
 export function useAttenence(page: number = 1, limit: number = 5) {
  return useQuery<AttendanceResponse>({
@@ -38,5 +38,49 @@ export const useUserAttendance = (payload: any) => {
       return data;
     },
     enabled: !!payload, // only runs when payload exists
+  });
+};
+
+export const useShift = (enabled: boolean = true) => {
+  return useQuery<ShiftConfig[]>({
+    queryKey: ["shift"],
+    queryFn: async () => {
+      const { data } = await api.get("/api/shift");
+      const payload = data?.data ?? data;
+      if (Array.isArray(payload)) return payload;
+      if (payload) return [payload];
+      return [];
+    },
+    enabled,
+    staleTime: 1000 * 60,
+    retry: false,
+  });
+};
+
+export const useCreateShift = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: ShiftConfig) => {
+      const { data } = await api.post("/api/shift", payload);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["shift"], exact: false });
+    },
+  });
+};
+
+export const useUpdateShift = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, payload }: { id: string; payload: ShiftConfig }) => {
+      const { data } = await api.put(`/api/shift/${id}`, payload);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["shift"], exact: false });
+    },
   });
 };

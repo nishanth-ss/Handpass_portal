@@ -10,3 +10,17 @@ export type Attendance = {
 export type AttendanceResponse = {
   data: Attendance;
 };
+
+export type ShiftConfig = {
+  id?: string | number;
+  _id?: string | number;
+  shift_name: string;
+  start_time: string;
+  end_time: string;
+  grace_minutes: number;
+  weekly_off_days: number[];
+};
+
+export type ShiftResponse = {
+  data: ShiftConfig;
+};

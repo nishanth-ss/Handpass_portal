@@ -5,18 +5,20 @@ import * as yup from "yup";
 
 const schema = yup.object({
   name: yup.string().required("Name is required"),
+  email: yup.string().email("Enter a valid email").required("Email is required"),
 });
 
 type EditUserDialogProps = {
   open: boolean;
   onClose: () => void;
   defaultName: string;
-  onSubmit: (values: { name: string }) => void;
+  defaultEmail: string;
+  onSubmit: (values: { name: string; email: string }) => void;
 };
 
-export const EditUserDialog = ({ open, onClose, defaultName, onSubmit }: EditUserDialogProps) => {
+export const EditUserDialog = ({ open, onClose, defaultName, defaultEmail, onSubmit }: EditUserDialogProps) => {
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
-    defaultValues: { name: defaultName },
+    defaultValues: { name: defaultName, email: defaultEmail },
     resolver: yupResolver(schema),
   });
 
@@ -32,6 +34,15 @@ export const EditUserDialog = ({ open, onClose, defaultName, onSubmit }: EditUse
             {...register("name")}
             error={!!errors.name}
             helperText={errors.name?.message?.toString()}
+          />
+          <TextField
+            label="Email"
+            type="email"
+            fullWidth
+            margin="normal"
+            {...register("email")}
+            error={!!errors.email}
+            helperText={errors.email?.message?.toString()}
           />
         </DialogContent>
         <DialogActions>

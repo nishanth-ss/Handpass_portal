@@ -33,8 +33,8 @@ export const useUpdateUser = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, name }: { id: number; name: string }) => {
-      const { data } = await api.put(`/api/users/update-user/${id}`, { name });
+    mutationFn: async ({ id, name, email }: { id: number; name: string; email: string }) => {
+      const { data } = await api.put(`/api/users/update-user/${id}`, { name, email });
       return data;
     },
     onSuccess: () => {

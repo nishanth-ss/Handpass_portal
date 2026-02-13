@@ -12,7 +12,7 @@ import UserDetailsDialog from '../components/user/UserDetailsDialog';
 
 const Users = () => {
   const [page, setPage] = useState(0);
-  const [editUser, setEditUser] = useState<{ id: number; name: string } | null>(null);
+  const [editUser, setEditUser] = useState<{ id: number; name: string; email: string } | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const deleteMutation = useDeleteUser(); // FIX HOOK HERE
   const queryClient = useQueryClient();
@@ -28,7 +28,7 @@ const Users = () => {
   if (isError) return <p>Error fetching users!</p>;
 
   const handleEdit = (row: any) => {
-    setEditUser({ id: row.id, name: row.name });
+    setEditUser({ id: row.id, name: row.name, email: row.email ?? "" });
   };
 
   const columns: GridColDef[] = [
@@ -128,10 +128,11 @@ const Users = () => {
         <EditUserDialog
           open={true}
           defaultName={editUser.name}
+          defaultEmail={editUser.email}
           onClose={() => setEditUser(null)}
           onSubmit={(values: any) => {
             updateUser.mutate(
-              { id: editUser.id, name: values.name },
+              { id: editUser.id, name: values.name, email: values.email },
               { onSuccess: () => setEditUser(null) }
             );
           }}

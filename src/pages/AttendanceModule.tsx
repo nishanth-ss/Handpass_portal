@@ -18,8 +18,10 @@ import {
   type InPunch,
   type Holiday,
 } from "../components/attendance";
-import { useUserAttendance } from "../service/useSettings";
+import { useCreateShift, useShift, useUpdateShift, useUserAttendance } from "../service/useSettings";
 import { useFetchUserWithGroup } from "../service/useUsers";
+import { Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, FormGroup, TextField, Typography } from "@mui/material";
+import type { ShiftConfig } from "../types/settingTypes";
 
 export default function AttendanceModule() {
   // Fetch real users from API
@@ -46,9 +48,56 @@ export default function AttendanceModule() {
   const [shiftEnd, setShiftEnd] = useState<string>("19:00");
   const [graceMinutes, setGraceMinutes] = useState<number>(15);
   const [weekOffDays, setWeekOffDays] = useState<number[]>([0]); // Sunday
+  const [isShiftDialogOpen, setIsShiftDialogOpen] = useState(false);
+  const { data: shiftList = [], isLoading: isShiftLoading } = useShift(isShiftDialogOpen);
+  const createShiftMutation = useCreateShift();
+  const updateShiftMutation = useUpdateShift();
+  const [selectedShiftKey, setSelectedShiftKey] = useState<string | null>(null);
+  const [selectedShiftId, setSelectedShiftId] = useState<string | null>(null);
+  const [hasInitializedShiftSelection, setHasInitializedShiftSelection] = useState(false);
+  const [formShiftName, setFormShiftName] = useState<string>("");
+  const [formShiftStart, setFormShiftStart] = useState<string>("");
+  const [formShiftEnd, setFormShiftEnd] = useState<string>("");
+  const [formGraceMinutes, setFormGraceMinutes] = useState<number>(0);
+  const [formWeekOffDays, setFormWeekOffDays] = useState<number[]>([]);
 
   // Drawer state
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+
+  const getShiftKey = (shift: ShiftConfig, index: number) =>
+    String(shift.id ?? shift._id ?? `${shift.shift_name}-${shift.start_time}-${index}`);
+
+  const applyShiftToForm = (shift: ShiftConfig) => {
+    setFormShiftName(shift.shift_name ?? "");
+    setFormShiftStart(shift.start_time ?? "");
+    setFormShiftEnd(shift.end_time ?? "");
+    setFormGraceMinutes(Number(shift.grace_minutes ?? 0));
+    setFormWeekOffDays(Array.isArray(shift.weekly_off_days) ? shift.weekly_off_days : []);
+  };
+
+  const getShiftId = (shift: ShiftConfig): string | null => {
+    const rawId = shift.id ?? shift._id;
+    return rawId ? String(rawId) : null;
+  };
+
+  const applyShiftToMainState = (shift: ShiftConfig) => {
+    setShiftName(shift.shift_name ?? "General");
+    setShiftStart(shift.start_time ?? "09:00");
+    setShiftEnd(shift.end_time ?? "19:00");
+    setGraceMinutes(Number(shift.grace_minutes ?? 15));
+    setWeekOffDays(Array.isArray(shift.weekly_off_days) ? shift.weekly_off_days : [0]);
+  };
+
+  useEffect(() => {
+    if (!shiftList.length) return;
+    if (selectedShiftKey || hasInitializedShiftSelection) return;
+    const firstShift = shiftList[0];
+    setSelectedShiftKey(getShiftKey(firstShift, 0));
+    setSelectedShiftId(getShiftId(firstShift));
+    applyShiftToForm(firstShift);
+    applyShiftToMainState(firstShift);
+    setHasInitializedShiftSelection(true);
+  }, [shiftList, selectedShiftKey, hasInitializedShiftSelection]);
 
   // API call for attendance data - only when we have a valid user ID
   const attendancePayload = useMemo(() => {
@@ -83,7 +132,7 @@ export default function AttendanceModule() {
       };
     }
 
-    const { presentCount, absentCount, workingDays, attendanceRate, calendar } = attendanceData.data;    
+    const { presentCount, absentCount, workingDays, attendanceRate, calendar } = attendanceData.data;
 
     // Convert calendar data to punches format
     const punchesByDate = new Map<string, InPunch>();
@@ -98,8 +147,8 @@ export default function AttendanceModule() {
       }
     });
 
-    console.log("punchesByDate",punchesByDate);
-    
+    console.log("punchesByDate", punchesByDate);
+
 
     // Convert to holidays map (empty for now, can be added later)
     const holidaysByDate = new Map<string, Holiday>();
@@ -168,7 +217,7 @@ export default function AttendanceModule() {
         const calendarDay = processedAttendanceData.calendar?.find(
           (day: any) => day.date === key
         );
-        
+
         if (calendarDay && !holiday && !upcoming) {
           // Use backend status, but don't override with weekOff logic
           if (calendarDay.status === "PRESENT") {
@@ -188,7 +237,7 @@ export default function AttendanceModule() {
 
           agg.details.push({
             userId: selectedUserId,
-            userName: attendanceData?.data?.calendar?.find((day: any) => 
+            userName: attendanceData?.data?.calendar?.find((day: any) =>
               day.date === key && day.status !== "WEEK_OFF" && day.status !== "HOLIDAY"
             )?.inTime ? "Present" : "User",
             status: calendarDay.status,
@@ -286,6 +335,27 @@ export default function AttendanceModule() {
     : "Day Details";
 
   const todayLabel = format(today, "yyyy-MM-dd HH:mm");
+  const isSavingShift = createShiftMutation.isPending || updateShiftMutation.isPending;
+  const isCreateMode = selectedShiftKey === null;
+  const canUpdateShift = !isCreateMode && !!selectedShiftId;
+  const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+  const toggleWeekOffDay = (dayIndex: number, checked: boolean) => {
+    setFormWeekOffDays((prev) => {
+      if (checked) {
+        return prev.includes(dayIndex) ? prev : [...prev, dayIndex].sort((a, b) => a - b);
+      }
+      return prev.filter((d) => d !== dayIndex);
+    });
+  };
+
+  const shiftPayload = {
+    shift_name: formShiftName,
+    start_time: formShiftStart,
+    end_time: formShiftEnd,
+    grace_minutes: formGraceMinutes,
+    weekly_off_days: formWeekOffDays,
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100">
@@ -332,6 +402,12 @@ export default function AttendanceModule() {
           </div>
         </div>
 
+        <div className="mb-4">
+          <Button className="!bg-primary !text-white" onClick={() => setIsShiftDialogOpen(true)}>
+            View Shift
+          </Button>
+        </div>
+
         {/* Header */}
         <HeaderBar
           selectedUserId={selectedUserId}
@@ -349,7 +425,7 @@ export default function AttendanceModule() {
         />
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 xl:grid-cols-[1.4fr_0.6fr] gap-6 items-start">
+        <div className="grid grid-cols-1 items-start">
           {/* Calendar */}
           <CalendarGrid
             days={days}
@@ -368,7 +444,7 @@ export default function AttendanceModule() {
           />
 
           {/* Settings Panel */}
-          <ShiftSettingsPanel
+          {/* <ShiftSettingsPanel
             shiftName={shiftName}
             setShiftName={setShiftName}
             shiftStart={shiftStart}
@@ -380,7 +456,7 @@ export default function AttendanceModule() {
             weekOffDays={weekOffDays}
             setWeekOffDays={setWeekOffDays}
             lateAfter={lateAfter}
-          />
+          /> */}
         </div>
 
         {/* Drawer */}
@@ -400,6 +476,149 @@ export default function AttendanceModule() {
             />
           ) : null}
         </Drawer>
+
+        <Dialog open={isShiftDialogOpen} onClose={() => setIsShiftDialogOpen(false)} fullWidth maxWidth="md">
+          <DialogTitle>Shift Details</DialogTitle>
+          <DialogContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+              <div className="rounded-lg border p-4 bg-slate-50">
+                <div className="flex items-center justify-between mb-3">
+                  <Typography variant="subtitle1" className="!font-semibold">
+                    Shift List
+                  </Typography>
+                  <Button
+                    size="small"
+                    variant="contained"
+                    onClick={() => {
+                      setSelectedShiftKey(null);
+                      setSelectedShiftId(null);
+                      setHasInitializedShiftSelection(true);
+                      setFormShiftName("");
+                      setFormShiftStart("");
+                      setFormShiftEnd("");
+                      setFormGraceMinutes(0);
+                      setFormWeekOffDays([]);
+                    }}
+                  >
+                    Create
+                  </Button>
+                </div>
+                {isShiftLoading ? (
+                  <Typography variant="body2">Loading shift...</Typography>
+                ) : !shiftList.length ? (
+                  <Typography variant="body2">No shifts found.</Typography>
+                ) : (
+                  <div className="space-y-2">
+                    {shiftList.map((shift, index) => {
+                      const shiftKey = getShiftKey(shift, index);
+                      const selected = selectedShiftKey === shiftKey;
+                      return (
+                        <button
+                          key={shiftKey}
+                          type="button"
+                          className={`w-full text-left rounded border p-3 ${selected ? "border-blue-500 bg-blue-50" : "border-slate-200 bg-white"}`}
+                          onClick={() => {
+                            setSelectedShiftKey(shiftKey);
+                            setSelectedShiftId(getShiftId(shift));
+                            applyShiftToForm(shift);
+                            applyShiftToMainState(shift);
+                          }}
+                        >
+                          <Typography variant="body2" className="!font-semibold">
+                            {shift.shift_name}
+                          </Typography>
+                          <Typography variant="caption" className="!text-slate-600">
+                            {shift.start_time} - {shift.end_time} | Grace {shift.grace_minutes}m | Off: {(shift.weekly_off_days || []).join(",")}
+                          </Typography>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div className="rounded-lg border p-4">
+                <Typography variant="subtitle1" className="!font-semibold !mb-3">
+                  Shift Form (Create/Update)
+                </Typography>
+                <div className="grid grid-cols-1 gap-3">
+                  <TextField
+                    label="Shift Name"
+                    value={formShiftName}
+                    onChange={(e) => setFormShiftName(e.target.value)}
+                    fullWidth
+                  />
+                  <TextField
+                    label="Start Time"
+                    value={formShiftStart}
+                    onChange={(e) => setFormShiftStart(e.target.value)}
+                    fullWidth
+                  />
+                  <TextField
+                    label="End Time"
+                    value={formShiftEnd}
+                    onChange={(e) => setFormShiftEnd(e.target.value)}
+                    fullWidth
+                  />
+                  <TextField
+                    label="Grace Minutes"
+                    type="number"
+                    value={formGraceMinutes}
+                    onChange={(e) => setFormGraceMinutes(Number(e.target.value || 0))}
+                    fullWidth
+                  />
+                  <div>
+                    <Typography variant="body2" className="!mb-1 !font-medium">
+                      Weekly Off Days
+                    </Typography>
+                    <FormGroup row>
+                      {weekDays.map((label, index) => (
+                        <FormControlLabel
+                          key={label}
+                          control={
+                            <Checkbox
+                              checked={formWeekOffDays.includes(index)}
+                              onChange={(_, checked) => toggleWeekOffDay(index, checked)}
+                            />
+                          }
+                          label={label}
+                        />
+                      ))}
+                    </FormGroup>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+          <DialogActions>
+             <Button color="error" variant="outlined" onClick={() => setIsShiftDialogOpen(false)}>
+              Close
+            </Button>
+            <Button
+              variant="outlined"
+              disabled={isSavingShift}
+              onClick={() =>
+                createShiftMutation.mutate(shiftPayload, {
+                  onSuccess: () => {
+                    setSelectedShiftKey(null);
+                  },
+                })
+              }
+            >
+              Create
+            </Button>
+            <Button
+              variant="contained"
+              disabled={isSavingShift || !canUpdateShift}
+              onClick={() => {
+                if (!selectedShiftId) return;
+                updateShiftMutation.mutate({ id: selectedShiftId, payload: shiftPayload });
+              }}
+            >
+              Update
+            </Button>
+          </DialogActions>
+        </Dialog>
       </div>
     </div>
   );
