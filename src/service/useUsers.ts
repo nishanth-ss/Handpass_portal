@@ -7,7 +7,7 @@ export function useUsers(page: number = 1, limit: number = 5,search?: string) {
   queryKey: ["users", page, limit,search],
   queryFn: async () => {
     const searchParam = search ? `search=${search}` : ""
-    const res = await api.get<UserResponse>(`/api/users?${searchParam}page=${page}&limit=${limit}`);
+    const res = await api.get<UserResponse>(`/api/users?${searchParam}&page=${page}&limit=${limit}`);
     return res.data;
   },
   staleTime: 1000 * 60,

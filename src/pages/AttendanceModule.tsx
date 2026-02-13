@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { addMonths, format, startOfMonth } from "date-fns";
 import { CheckCircle2, XCircle } from "lucide-react";
 import {
@@ -12,46 +12,33 @@ import {
   ALL_USERS,
   toMinutes,
   minutesToHHMM,
-  generateCalendarDays,
-  calculateDayAggregates,
   calculateMonthStats,
   computeStatus,
   getHolidayForDate,
-  type User,
   type InPunch,
   type Holiday,
 } from "../components/attendance";
-
-// Mock Data (replace with API later)
-const MOCK_USERS: User[] = [
-  { id: "u1", name: "Amit" },
-  { id: "u2", name: "Neha" },
-  { id: "u3", name: "Rahul" },
-];
-
-const MOCK_IN_PUNCHES: InPunch[] = [
-  // Amit
-  { userId: "u1", date: "2026-02-02", inTime: "09:05" },
-  { userId: "u1", date: "2026-02-03", inTime: "09:22" },
-  { userId: "u1", date: "2026-02-05", inTime: "08:58" },
-  { userId: "u1", date: "2026-02-06", inTime: "10:10" },
-  // Neha
-  { userId: "u2", date: "2026-02-02", inTime: "09:02" },
-  { userId: "u2", date: "2026-02-04", inTime: "09:40" },
-  // Rahul
-  { userId: "u3", date: "2026-02-03", inTime: "08:50" },
-  { userId: "u3", date: "2026-02-06", inTime: "09:10" },
-];
-
-const MOCK_HOLIDAYS: Holiday[] = [{ date: "2026-02-14", name: "Sample Holiday" }];
+import { useUserAttendance } from "../service/useSettings";
+import { useFetchUserWithGroup } from "../service/useUsers";
 
 export default function AttendanceModule() {
-  // Demo "now": fixed
-  const today = useMemo(() => new Date(2026, 1, 8, 10, 30), []);
+  // Fetch real users from API
+  const { data: usersData } = useFetchUserWithGroup({ page: 1, limit: 100 });
+  const users = usersData?.data || [];
+
+  // Demo "now": use actual current date
+  const today = useMemo(() => new Date(), []);
   const [currentMonth, setCurrentMonth] = useState<Date>(startOfMonth(today));
 
   // User selection
-  const [selectedUserId, setSelectedUserId] = useState<string>(ALL_USERS);
+  const [selectedUserId, setSelectedUserId] = useState<string>("");
+
+  // Set initial user when data loads
+  useEffect(() => {
+    if (users.length > 0 && !selectedUserId) {
+      setSelectedUserId(users[0].id);
+    }
+  }, [users, selectedUserId]);
 
   // Shift config
   const [shiftName, setShiftName] = useState<string>("General");
@@ -63,78 +50,196 @@ export default function AttendanceModule() {
   // Drawer state
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
-  // Processed data
-  const holidaysByDate = useMemo(() => {
-    const m = new Map<string, Holiday>();
-    for (const h of MOCK_HOLIDAYS) m.set(h.date, h);
-    return m;
-  }, []);
+  // API call for attendance data - only when we have a valid user ID
+  const attendancePayload = useMemo(() => {
+    if (!selectedUserId) return null;
+    return {
+      user_id: selectedUserId,
+      month: currentMonth.getMonth() + 1, // API expects 1-12
+      year: currentMonth.getFullYear(),
+    };
+  }, [selectedUserId, currentMonth]);
 
-  const days = useMemo(() => generateCalendarDays(currentMonth), [currentMonth]);
+  const { data: attendanceData, refetch: refetchAttendance } = useUserAttendance(attendancePayload);
+
+  // Refetch attendance data when user selection changes
+  useEffect(() => {
+    if (selectedUserId && selectedUserId !== "ALL") {
+      refetchAttendance();
+    }
+  }, [selectedUserId, refetchAttendance]);
+
+  // Process API data into our existing format
+  const processedAttendanceData = useMemo(() => {
+    if (!attendanceData?.data) {
+      return {
+        presentCount: 0,
+        absentCount: 0,
+        workingDays: 0,
+        attendanceRate: "0.00",
+        calendar: [],
+        punchesByDate: new Map<string, InPunch>(),
+        holidaysByDate: new Map<string, Holiday>(),
+      };
+    }
+
+    const { presentCount, absentCount, workingDays, attendanceRate, calendar } = attendanceData.data;    
+
+    // Convert calendar data to punches format
+    const punchesByDate = new Map<string, InPunch>();
+    calendar?.forEach((day: any) => {
+      // Include both present days (with inTime) and absent days
+      if (day.inTime || day.status === 'ABSENT') {
+        punchesByDate.set(day.date, {
+          userId: selectedUserId,
+          date: day.date,
+          inTime: day.inTime,
+        });
+      }
+    });
+
+    console.log("punchesByDate",punchesByDate);
+    
+
+    // Convert to holidays map (empty for now, can be added later)
+    const holidaysByDate = new Map<string, Holiday>();
+    // MOCK_HOLIDAYS.forEach((holiday) => {
+    //   holidaysByDate.set(holiday.date, holiday);
+    // });
+
+    return {
+      presentCount,
+      absentCount,
+      workingDays,
+      attendanceRate,
+      calendar,
+      punchesByDate,
+      holidaysByDate,
+    };
+  }, [attendanceData, selectedUserId]);
+
+  const monthStart = startOfMonth(currentMonth);
+  const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+  // Use actual API data range instead of calculating month boundaries
+  const firstApiDate = processedAttendanceData.calendar?.[0]?.date;
+  const lastApiDate = processedAttendanceData.calendar?.[processedAttendanceData.calendar?.length - 1]?.date;
+  const gridStart = firstApiDate ? new Date(firstApiDate) : new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+  const gridEnd = lastApiDate ? new Date(lastApiDate) : new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 6);
 
   const lateAfterMinutes = toMinutes(shiftStart) + graceMinutes;
   const lateAfter = minutesToHHMM(lateAfterMinutes);
 
-  // Single-user punches map
-  const punchesByDate = useMemo(() => {
-    const m = new Map<string, InPunch>();
-    if (selectedUserId === ALL_USERS) return m;
-
-    for (const p of MOCK_IN_PUNCHES) {
-      if (p.userId === selectedUserId) m.set(p.date, p);
+  const days: Date[] = useMemo(() => {
+    const out: Date[] = [];
+    let d = gridStart;
+    while (d <= gridEnd) {
+      out.push(d);
+      d = new Date(d.getTime() + 24 * 60 * 60 * 1000);
     }
-    return m;
-  }, [selectedUserId]);
+    return out;
+  }, [gridStart, gridEnd]);
 
-  // Pre-index punches for ALL mode
-  const punchIndexByDate = useMemo(() => {
-    const byDate = new Map<string, Map<string, InPunch>>();
-    for (const p of MOCK_IN_PUNCHES) {
-      if (!byDate.has(p.date)) byDate.set(p.date, new Map());
-      byDate.get(p.date)!.set(p.userId, p);
-    }
-    return byDate;
-  }, []);
+  // Use processed API data
+  const punchesByDate = processedAttendanceData.punchesByDate;
+  const holidaysByDate = processedAttendanceData.holidaysByDate;
 
-  // ALL users aggregates for each day
+  // ALL users aggregates for each day on grid (for calendar + drawer)
   const dayAggByDate = useMemo(() => {
-    return calculateDayAggregates({
-      days,
-      users: MOCK_USERS,
-      holidaysByDate,
-      weekOffDays,
-      today,
-      shiftStart,
-      graceMinutes,
-      punchIndexByDate,
-    });
+    const m = new Map<string, any>();
+
+    for (const dateObj of days) {
+      const key = format(dateObj, "yyyy-MM-dd");
+      const holiday = getHolidayForDate(holidaysByDate, key);
+      const weekOff = isWeekOff(dateObj, weekOffDays);
+      const upcoming = isAfter(dateObj, today);
+
+      const agg = {
+        present: 0,
+        absent: 0,
+        late: 0,
+        holiday,
+        weekOff,
+        upcoming,
+        details: [] as any[],
+      };
+
+      // For single user mode, use the API calendar data
+      if (selectedUserId !== ALL_USERS) {
+        const calendarDay = processedAttendanceData.calendar?.find(
+          (day: any) => day.date === key
+        );
+        
+        if (calendarDay && !holiday && !upcoming) {
+          // Use backend status, but don't override with weekOff logic
+          if (calendarDay.status === "PRESENT") {
+            agg.present = 1;
+            agg.weekOff = false; // Override calculated weekOff
+          } else if (calendarDay.status === "LATE") {
+            agg.present = 1;
+            agg.late = 1;
+            agg.weekOff = false; // Override calculated weekOff
+          } else if (calendarDay.status === "ABSENT") {
+            agg.absent = 1;
+            agg.weekOff = false; // Override calculated weekOff
+          } else if (calendarDay.status === "WEEK_OFF") {
+            // Keep weekOff flag if backend says it's week off
+            agg.weekOff = true;
+          }
+
+          agg.details.push({
+            userId: selectedUserId,
+            userName: attendanceData?.data?.calendar?.find((day: any) => 
+              day.date === key && day.status !== "WEEK_OFF" && day.status !== "HOLIDAY"
+            )?.inTime ? "Present" : "User",
+            status: calendarDay.status,
+            inTime: calendarDay.inTime,
+            note: calendarDay.status,
+          });
+        }
+      }
+
+      m.set(key, agg);
+    }
+
+    return m;
   }, [
     days,
     holidaysByDate,
     weekOffDays,
     today,
-    shiftStart,
-    graceMinutes,
-    punchIndexByDate,
+    processedAttendanceData.calendar,
+    selectedUserId,
+    ALL_USERS,
   ]);
 
-  // Month stats
+  // Use API data for stats
   const monthStats = useMemo(() => {
-    return calculateMonthStats({
-      monthStart: startOfMonth(currentMonth),
-      monthEnd: new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0),
-      holidaysByDate,
-      weekOffDays,
-      today,
-      selectedUserId,
-      dayAggByDate,
-      punchesByDate,
-      shiftStart,
-      graceMinutes,
-      users: MOCK_USERS,
-    });
+    if (selectedUserId === ALL_USERS) {
+      // For ALL users, we'd need to make multiple API calls or have a different endpoint
+      return calculateMonthStats({
+        monthStart,
+        monthEnd,
+        holidaysByDate,
+        weekOffDays,
+        today,
+        selectedUserId,
+        dayAggByDate,
+        punchesByDate,
+        shiftStart,
+        graceMinutes,
+        users: users,
+      });
+    } else {
+      // Use real API data for single user
+      return {
+        present: processedAttendanceData.presentCount,
+        absent: processedAttendanceData.absentCount,
+        workingDays: processedAttendanceData.workingDays,
+      };
+    }
   }, [
-    currentMonth,
+    monthStart,
+    monthEnd,
     holidaysByDate,
     weekOffDays,
     today,
@@ -143,10 +248,20 @@ export default function AttendanceModule() {
     punchesByDate,
     shiftStart,
     graceMinutes,
-    MOCK_USERS,
+    processedAttendanceData,
+    [],
   ]);
 
-  // Drawer selections
+  // Helper function for week off check
+  function isWeekOff(date: Date, weekOffDays: number[]) {
+    return weekOffDays.includes(date.getDay());
+  }
+
+  // Helper function for date comparison
+  function isAfter(date1: Date, date2: Date) {
+    return date1 > date2;
+  }
+
   const selectedKey = selectedDate ? format(selectedDate, "yyyy-MM-dd") : null;
   const selectedHoliday = selectedKey ? getHolidayForDate(holidaysByDate, selectedKey) : null;
   const selectedPunch = selectedKey && selectedUserId !== ALL_USERS ? punchesByDate.get(selectedKey) ?? null : null;
@@ -166,30 +281,11 @@ export default function AttendanceModule() {
   const drawerTitle = selectedDate
     ? `Day Details • ${format(selectedDate, "yyyy-MM-dd")} • ${selectedUserId === ALL_USERS
       ? "All Users"
-      : MOCK_USERS.find((u) => u.id === selectedUserId)?.name ?? "User"
+      : users.find((u: any) => u.id === selectedUserId)?.name ?? "User"
     }`
     : "Day Details";
 
   const todayLabel = format(today, "yyyy-MM-dd HH:mm");
-
-  useEffect(() => {
-    const API_KEY = '9ynOV3nhJHsWWcWCcGjfkJLbVl33wicr'; 
-    // Fixed URL structure below:
-    const url = `https://calendarific.com/api/v2/holidays?api_key=${API_KEY}&country=IN&year=2026`;
-
-    fetch(url)
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-        return res.json();
-      })
-      .then((data) => {
-        // Calendarific nests the array inside response.holidays
-        console.log("India Holiday Data:", data.response.holidays);
-      })
-      .catch((err) => console.error("Fetch Error:", err));
-  }, []);
-
-
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100">
@@ -220,7 +316,7 @@ export default function AttendanceModule() {
               value={monthStats.absent}
               subtitle={
                 selectedUserId === ALL_USERS
-                  ? `Working days: ${monthStats.workingDays} • Users: ${MOCK_USERS.length}`
+                  ? `Working days: ${monthStats.workingDays} • Users: ${users.length}`
                   : `Working days counted: ${monthStats.workingDays}`
               }
               icon={<div className="h-5 w-5 rounded-full bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center">
@@ -240,7 +336,6 @@ export default function AttendanceModule() {
         <HeaderBar
           selectedUserId={selectedUserId}
           onChangeUser={setSelectedUserId}
-          users={MOCK_USERS}
           shiftName={shiftName}
           shiftStart={shiftStart}
           shiftEnd={shiftEnd}

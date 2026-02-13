@@ -63,14 +63,27 @@ export function CalendarGrid({
 
       {/* Weekday Headers */}
       <div className="grid grid-cols-7 gap-px bg-gradient-to-b from-slate-200 to-slate-300">
-        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-          <div 
-            key={day} 
-            className="bg-gradient-to-b from-slate-50 to-slate-100 px-3 py-3 text-center text-xs font-semibold text-slate-700 uppercase tracking-wide border-b border-slate-200"
-          >
-            {day}
-          </div>
-        ))}
+        {(() => {
+          // Generate weekday headers starting from the actual first day's weekday
+          const firstDay = days[0];
+          const allWeekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+          const startDayIndex = firstDay.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+          
+          // Create ordered weekdays starting from the first day's weekday
+          const orderedWeekdays = [];
+          for (let i = 0; i < 7; i++) {
+            orderedWeekdays.push(allWeekdays[(startDayIndex + i) % 7]);
+          }
+          
+          return orderedWeekdays.map((day) => (
+            <div 
+              key={day} 
+              className="bg-gradient-to-b from-slate-50 to-slate-100 px-3 py-3 text-center text-xs font-semibold text-slate-700 uppercase tracking-wide border-b border-slate-200"
+            >
+              {day}
+            </div>
+          ));
+        })()}
       </div>
 
       {/* Calendar Days Grid */}

@@ -1,11 +1,37 @@
+import { useMemo, useState, useEffect } from "react";
 import { format } from "date-fns";
-import { Users, CalendarDays, ChevronLeft, ChevronRight, Home } from "lucide-react";
+import {
+  CalendarDays,
+  Users,
+  ChevronLeft,
+  ChevronRight,
+  Home,
+} from "lucide-react";
+import Autocomplete from "@mui/material/Autocomplete";
+import TextField from "@mui/material/TextField";
+import { useUsers } from "../../service/useUsers";
 import type { User, AllUsersType } from "./types";
+
+// Debounce hook
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
 
 interface HeaderBarProps {
   selectedUserId: string | AllUsersType;
   onChangeUser: (id: string) => void;
-  users: User[];
   shiftName: string;
   shiftStart: string;
   shiftEnd: string;
@@ -21,7 +47,6 @@ interface HeaderBarProps {
 export function HeaderBar({
   selectedUserId,
   onChangeUser,
-  users,
   shiftName,
   shiftStart,
   shiftEnd,
@@ -33,10 +58,47 @@ export function HeaderBar({
   onNext,
   todayLabel,
 }: HeaderBarProps) {
-  const selectedUserName =
-    selectedUserId === "ALL"
-      ? "All Users"
-      : users.find((u) => u.id === selectedUserId)?.name ?? "User";
+  // Search state for API
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Debounced search query (300ms delay)
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+
+  // Fetch users from API with debounced search
+  const { data: usersData, isLoading } = useUsers(1, 100, debouncedSearchQuery);
+  
+  // Transform API response to our User format with unique IDs
+  const users: User[] = useMemo(() => {
+    if (!usersData?.data) return [];
+    return usersData.data.map((user: any, index) => ({
+      id: user.user_id || user.id || `user-${index}`, // Ensure unique ID
+      name: user.name,
+    }));
+  }, [usersData]);
+
+  // Add "All Users" option
+  const allUsersOption: User[] = useMemo(() => [
+    { id: "ALL", name: "All Users" },
+    ...users,
+  ], [users]);
+
+  const selectedUser = useMemo(() => {
+    return allUsersOption.find((u) => u.id === selectedUserId) || null;
+  }, [selectedUserId, allUsersOption]);
+
+  const selectedUserName = useMemo(() => {
+    return selectedUser?.name || "User";
+  }, [selectedUser]);
+
+  const handleUserChange = (_event: any, newValue: User | null) => {
+    if (newValue) {
+      onChangeUser(newValue.id);
+    }
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value); // Update search query for API
+  };
 
   return (
     <div className="mb-6 overflow-hidden rounded-2xl border border-white/20 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 text-white shadow-2xl">
@@ -79,7 +141,7 @@ export function HeaderBar({
                 </span>
                 <span className="text-white/70">•</span>
                 <span className="text-white/70">Late after:</span>
-                <span className="font-semibold text-black bg-gradient-to-r from-amber-300 to-orange-300 text-amber-900 px-2 py-1 rounded-full">
+                <span className="font-semibold text-yellow-300 bg-gradient-to-r from-amber-300 to-orange-300 text-amber-900 px-2 py-1 rounded-full">
                   {lateAfter}
                 </span>
               </div>
@@ -100,24 +162,83 @@ export function HeaderBar({
 
           {/* Right Section - Controls */}
           <div className="flex flex-col gap-3 lg:items-end">
-            {/* User Selector */}
-            <div className="flex items-center gap-2 rounded-xl border border-white/30 bg-white/20 px-4 py-2.5 backdrop-blur-sm hover:bg-white/30 transition-colors">
-              <Users className="h-4 w-4 text-white/90" />
-              <select
-                value={selectedUserId}
-                onChange={(e) => onChangeUser(e.target.value)}
-                className="bg-transparent text-sm font-semibold text-white outline-none cursor-pointer"
-              >
-                <option value="ALL" className="text-slate-900 bg-white">
-                  All Users
-                </option>
-                {users.map((u) => (
-                  <option key={u.id} value={u.id} className="text-slate-900 bg-white">
-                    {u.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {/* User Selector with MUI Autocomplete */}
+            <div className="relative">
+              <div className="flex items-center gap-2 rounded-xl border border-white/30 bg-white/20 px-4 py-2.5 mb-4 backdrop-blur-sm">
+                <Users className="h-4 w-4 text-white/90" />
+                <Autocomplete
+                  options={allUsersOption}
+                  getOptionLabel={(option: User) => option.name}
+                  value={selectedUser}
+                  onChange={handleUserChange}
+                  loading={isLoading}
+                  loadingText="Loading users..."
+                  noOptionsText="No users found"
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      placeholder="Search users..."
+                      variant="standard"
+                      onChange={(e) => handleSearchChange(e.target.value)}
+                      InputProps={{
+                        ...params.InputProps,
+                        className: "text-white placeholder-white/60",
+                        style: {
+                          color: 'white',
+                          fontSize: '14px',
+                          fontWeight: 600,
+                        }
+                      }}
+                      sx={{
+                        '& .MuiInputBase-root': {
+                          '&::before': {
+                            borderBottom: 'none',
+                            },
+                          '&::after': {
+                            borderBottom: 'none',
+                            },
+                        },
+                        '& .MuiInput-input': {
+                          color: 'white',
+                          '&::placeholder': {
+                            color: 'rgba(255, 255, 255, 0.6)',
+                            opacity: 1,
+                          },
+                        },
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          borderColor: 'rgba(255, 255, 255, 0.3)',
+                        },
+                        '&:hover .MuiOutlinedInput-notchedOutline': {
+                          borderColor: 'rgba(255, 255, 255, 0.5)',
+                        },
+                      }}
+                    />
+                  )}
+                  sx={{
+                    width: 200,
+                    '& .MuiAutocomplete-option': {
+                      color: '#1e293b',
+                      backgroundColor: 'white',
+                      '&:hover': {
+                        backgroundColor: 'rgba(99, 102, 241, 0.08)',
+                      },
+                      '&[aria-selected="true"]': {
+                        backgroundColor: 'rgba(99, 102, 241, 0.16)',
+                      },
+                    },
+                    '& .MuiAutocomplete-listbox': {
+                      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                      backdropFilter: 'blur(12px)',
+                      border: '1px solid rgba(255, 255, 255, 0.3)',
+                      borderRadius: '12px',
+                      boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+                    },
+                    '& .MuiPaper-root': {
+                      backgroundColor: 'transparent',
+                    },
+                  }}
+                />
+              </div>
 
             {/* Navigation Controls */}
             <div className="flex gap-2">
@@ -148,5 +269,6 @@ export function HeaderBar({
         </div>
       </div>
     </div>
+  </div>
   );
 }

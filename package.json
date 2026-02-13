@@ -13,7 +13,7 @@
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@hookform/resolvers": "^5.2.2",
-    "@mui/material": "^7.3.7",
+    "@mui/material": "^7.3.8",
     "@mui/styled-engine-sc": "^7.3.7",
     "@mui/x-data-grid": "^8.24.0",
     "@mui/x-date-pickers": "^8.24.0",

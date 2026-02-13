@@ -3,7 +3,7 @@ export type User = { id: string; name: string };
 export type InPunch = {
   userId: string;
   date: string; // yyyy-MM-dd
-  inTime: string; // HH:mm
+  inTime: string | null; // HH:mm or null for absent days
 };
 
 export type Holiday = {

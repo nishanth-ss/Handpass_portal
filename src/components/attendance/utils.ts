@@ -17,7 +17,8 @@ import type {
   DayAgg
 } from "./types";
 
-export function toMinutes(hhmm: string): number {
+export function toMinutes(hhmm: string | null | undefined): number {
+  if (!hhmm) return 0;
   const [h, m] = hhmm.split(":").map(Number);
   return h * 60 + m;
 }

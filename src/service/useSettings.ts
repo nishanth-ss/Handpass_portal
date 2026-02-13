@@ -29,3 +29,14 @@ export const createAttendance = ()=>{
     },
   });
 }
+
+export const useUserAttendance = (payload: any) => {
+  return useQuery({
+    queryKey: ["attendance", payload],
+    queryFn: async () => {
+      const { data } = await api.post("/api/attendance", payload);
+      return data;
+    },
+    enabled: !!payload, // only runs when payload exists
+  });
+};
