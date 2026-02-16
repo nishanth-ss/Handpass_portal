@@ -27,23 +27,23 @@ function LoginForm() {
   const loginMutation = useLogin();
   const [showPassword, setShowPassword] = useState(false);
   const togglePassword = () => setShowPassword(!showPassword);
-  const { login } = useAuth()
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const onSubmit = (data: LoginFormValues) => {
     loginMutation.mutate(data, {
-      onSuccess: (data) => {
-        login(data.token)
-        localStorage.setItem("user", JSON.stringify(data.user));
-        navigate("/dashboard"); // ✅ now works
-      }
+      onSuccess: (response) => {
+        login(response.user);
+        navigate("/dashboard");
+      },
     });
   };
 
   return (
-    <div className="h-screen w-full flex items-center justify-center"
+    <div
+      className="h-screen w-full flex items-center justify-center"
       style={{
-        background: "linear-gradient(135deg, #0E21A0, #F5FBE6)"
+        background: "linear-gradient(135deg, #0E21A0, #F5FBE6)",
       }}
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 w-125 bg-white p-10 rounded-xl">
@@ -75,7 +75,6 @@ function LoginForm() {
               ),
             }}
           />
-
         </div>
 
         <Button
