@@ -12,9 +12,7 @@ export function useLogin() {
 
     return useMutation({
         mutationFn: async (data: LoginFormValues) => {
-            const res = await api.post("/api/auth/login", data, {
-                withCredentials: false,
-            }); // login endpoint
+            const res = await api.post("/api/auth/login", data); // login endpoint
             return res.data;
         },
         onSuccess: () => {  

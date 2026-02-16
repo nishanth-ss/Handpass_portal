@@ -44,7 +44,7 @@ export const AuthProvider = ({ children }: IAuthProvider) => {
         try {
             const res = await api.get("/api/auth/me");
             setIsAuthenticated(true);
-            setUser(res.data?.user ?? res.data ?? null);
+            setUser(res.data?.data ?? res.data?.user ?? res.data ?? null);
         } catch {
             setIsAuthenticated(false);
             setUser(null);
