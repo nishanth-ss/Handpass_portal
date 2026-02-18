@@ -25,6 +25,7 @@ const RemoteGroups = lazy(() => import("./pages/RemoteGroups"));
 const TimeSchedules = lazy(() => import("./pages/TimeSchedules"));
 const Reports = lazy(() => import("./pages/Reports"));
 const GroupManagement = lazy(() => import("./pages/GroupManagement"));
+const WiegandGroup = lazy(()=> import("./pages/WiegandGroup"));
 const FirmwareCheck = lazy(() => import("./pages/FirmwareCheck"));
 const LoginForm = lazy(() => import("./pages/Login"));
 const AttenenceModule = lazy(() => import("./pages/AttendanceModule"));
@@ -59,6 +60,7 @@ function App() {
                   <Route path="/time-schedules" element={<TimeSchedules />} />
                   <Route path="/reports" element={<Reports />} />
                   <Route path="/group-management" element={<GroupManagement />} />
+                  <Route path="/wiegand-management" element={<WiegandGroup />} />
                   <Route path="/firm-check" element={<FirmwareCheck />} />
                   <Route path="/settings" element={<AttenenceModule />} />
                 </Route>

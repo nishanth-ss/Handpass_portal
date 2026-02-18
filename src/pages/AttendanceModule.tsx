@@ -528,7 +528,9 @@ export default function AttendanceModule() {
                             {shift.shift_name}
                           </Typography>
                           <Typography variant="caption" className="!text-slate-600">
-                            {shift.start_time} - {shift.end_time} | Grace {shift.grace_minutes}m | Off: {(shift.weekly_off_days || []).join(",")}
+                            {shift.start_time} - {shift.end_time} | Grace {shift.grace_minutes}m | Off: {((shift.weekly_off_days || []) as number[])
+                              .map((day) => weekDays[day] ?? day)
+                              .join(", ")}
                           </Typography>
                         </button>
                       );

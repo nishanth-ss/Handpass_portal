@@ -12,7 +12,7 @@ import UserDetailsDialog from '../components/user/UserDetailsDialog';
 
 const Users = () => {
   const [page, setPage] = useState(0);
-  const [editUser, setEditUser] = useState<{ id: number; name: string; email: string } | null>(null);
+  const [editUser, setEditUser] = useState<{ id: number; name: string; email: string; shift_id?: string } | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const deleteMutation = useDeleteUser(); // FIX HOOK HERE
   const queryClient = useQueryClient();
@@ -28,21 +28,26 @@ const Users = () => {
   if (isError) return <p>Error fetching users!</p>;
 
   const handleEdit = (row: any) => {
-    setEditUser({ id: row.id, name: row.name, email: row.email ?? "" });
+    setEditUser({ id: row.id, name: row.name, email: row.email ?? "", shift_id: row.shift_id });
   };
 
   const columns: GridColDef[] = [
-    { field: "username", headerName: "Name", flex: 1,
-      renderCell: (param)=>{
-        return <h1>{param.row.name} - {param.row.sn}</h1>
+    {
+      field: "username", headerName: "Name", flex: 1,
+      renderCell: (param) => {
+        return <h1>{param.row.name} - {param.row.device_name}</h1>
       }
-     },
-     { field: "userId", headerName: "User ID", flex: 1,
-      renderCell: (param)=>{
+    },
+    {
+      field: "userId", headerName: "User ID", flex: 1,
+      renderCell: (param) => {
         return <h1>{param.row.user_id}</h1>
       }
-     },
+    },
     { field: "email", headerName: "Email", flex: 1 },
+    {
+      field: "shift_name", headerName: "Shift", flex: 1
+    },
     {
       field: "created_at", headerName: "Created At", flex: 1,
       renderCell: (params) => (
@@ -76,7 +81,10 @@ const Users = () => {
     email: user.email,
     user_id: user.user_id,
     create_at: user.created_at,
-    sn: user?.sn
+    sn: user?.sn,
+    shift_id: user?.shift_id ? String(user.shift_id) : undefined,
+    device_name: user?.device_name,
+    shift_name: user?.shift_name
   }));
 
   const handleView = (id: string) => {
@@ -129,10 +137,11 @@ const Users = () => {
           open={true}
           defaultName={editUser.name}
           defaultEmail={editUser.email}
+          defaultShiftId={editUser.shift_id}
           onClose={() => setEditUser(null)}
           onSubmit={(values: any) => {
             updateUser.mutate(
-              { id: editUser.id, name: values.name, email: values.email },
+              { id: editUser.id, name: values.name, email: values.email, shift_id: values.shift_id },
               { onSuccess: () => setEditUser(null) }
             );
           }}

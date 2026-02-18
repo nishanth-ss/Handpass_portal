@@ -126,7 +126,7 @@ const ReportsForm = ({ onFilterChange }: ReportsFormProps) => {
                         <Autocomplete
                             options={data?.data ?? []} // array of UserData
                             getOptionLabel={(option) =>
-                                option ? `${option.name} (${option.sn})` : ""
+                                option ? `${option.name} (${option.device_name})` : ""
                             }
                             isOptionEqualToValue={(option, value) => option.id === value?.id} // key matching
                             value={field.value as any} // must be UserData | null

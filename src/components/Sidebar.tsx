@@ -14,7 +14,8 @@ export const NAV_ITEMS = [
     { label: "Remote Groups", href: "/remote-groups", icon: Network },
     { label: "Time Schedules", href: "/time-schedules", icon: Clock },
     { label: "Reports", href: "/reports", icon: FileText },
-    { label: "Group Management", href: "/group-management", icon: Group },
+    // { label: "Group Management", href: "/group-management", icon: Group },
+    { label: "Wiegand Group", href: "/wiegand-management", icon: Group },
     { label: "Firmware Check", href: "/firm-check", icon: IoHardwareChipSharp },
     { label: "Settings", href: "/settings", icon: Settings },
 ];
