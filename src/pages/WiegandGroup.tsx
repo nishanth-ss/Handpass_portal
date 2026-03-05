@@ -52,6 +52,53 @@ const weekdayLabelMap: Record<number, string> = {
   7: "Sun",
 };
 
+const weekdaysToBitmask = (days: Weekday[]) =>
+  days.reduce((mask, day) => mask | (1 << (day - 1)), 0);
+
+const bitmaskToWeekdays = (mask: number): Weekday[] =>
+  weekdayOptions
+    .map((day) => day.value)
+    .filter((day) => (mask & (1 << (day - 1))) !== 0);
+
+const timeStringToSeconds = (time: string) => {
+  const [hh, mm] = time.split(":").map(Number);
+  if (Number.isNaN(hh) || Number.isNaN(mm)) return 0;
+  return hh * 3600 + mm * 60;
+};
+
+const secondsToTimeString = (seconds: number) => {
+  const total = Number.isFinite(seconds) ? Math.max(0, Math.floor(seconds)) : 0;
+  const hh = String(Math.floor(total / 3600) % 24).padStart(2, "0");
+  const mm = String(Math.floor((total % 3600) / 60)).padStart(2, "0");
+  return `${hh}:${mm}`;
+};
+
+const formatTimeForDisplay = (value: unknown) => {
+  if (typeof value === "number") return secondsToTimeString(value);
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (/^\d+$/.test(trimmed)) return secondsToTimeString(Number(trimmed));
+    return trimmed || "-";
+  }
+  return "-";
+};
+
+const toTimeInputValue = (value: unknown) => {
+  if (typeof value === "number") return secondsToTimeString(value);
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (/^\d+$/.test(trimmed)) return secondsToTimeString(Number(trimmed));
+    return trimmed;
+  }
+  return "";
+};
+
+const normalizeUnixSeconds = (value: unknown) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) return "";
+  return String(numeric >= 1_000_000_000_000 ? Math.floor(numeric / 1000) : Math.floor(numeric));
+};
+
 const initialForm = {
   group_id: "",
   sn: "",
@@ -68,6 +115,11 @@ const initialAssignForm = {
   group_id: "",
   timestamp: "",
   del_flag: false,
+};
+
+type DeviceSnOption = {
+  sn: string;
+  label: string;
 };
 
 function TabPanel(props: { children?: React.ReactNode; value: number; index: number }) {
@@ -111,8 +163,16 @@ const WiegandGroup = () => {
   const { data: assignDevicesData, isLoading: isAssignDevicesLoading } = useDevices(1, debouncedAssignSnSearchText);
   const { data: usersData, isLoading: isUsersLoading } = useUsers(1, 100, debouncedAssignUserSearchText);
 
-  const snOptions = Array.from(
-    new Set((devicesData?.data || []).map((device: any) => device?.sn).filter(Boolean))
+  const snOptions: DeviceSnOption[] = Array.from(
+    new Map(
+      (devicesData?.data || [])
+        .filter((device: any) => device?.sn)
+        .map((device: any) => {
+          const sn = String(device.sn);
+          const deviceName = String(device?.device_name || "").trim();
+          return [sn, { sn, label: deviceName || sn }];
+        })
+    ).values()
   );
   const assignSnOptions = Array.from(
     new Set((assignDevicesData?.data || []).map((device: any) => device?.sn).filter(Boolean))
@@ -134,15 +194,17 @@ const WiegandGroup = () => {
     setForm({
       group_id: String(row.group_id ?? ""),
       sn: String(row.sn ?? ""),
-      timestamp: String(row.timestamp ?? ""),
+      timestamp: normalizeUnixSeconds(row.timestamp),
       del_flag: String(row.del_flag ?? "0"),
-      start: String(row.start ?? ""),
-      end: String(row.end ?? ""),
+      start: toTimeInputValue(row.start),
+      end: toTimeInputValue(row.end),
       weekdays: Array.isArray(row.weekdaysRaw)
         ? row.weekdaysRaw
             .map((day: number) => Number(day))
             .filter((day: number) => day >= 1 && day <= 7) as Weekday[]
-        : [],
+        : typeof row.weekdaysRaw === "number"
+          ? bitmaskToWeekdays(row.weekdaysRaw)
+          : [],
     });
     setSnSearchText(String(row.sn ?? ""));
     setOpen(true);
@@ -171,6 +233,14 @@ const WiegandGroup = () => {
 
   const rows = list.map((item: any, index: number) => {
     const firstConfig = item?.time_configs?.[0];
+    const rawWeekdays = firstConfig?.weekdays;
+    const weekdaysArray: Weekday[] = Array.isArray(rawWeekdays)
+      ? rawWeekdays
+          .map((day: number) => Number(day))
+          .filter((day: number) => day >= 1 && day <= 7) as Weekday[]
+      : typeof rawWeekdays === "number"
+        ? bitmaskToWeekdays(rawWeekdays)
+        : [];
     return {
       id: item?.id ?? `${item?.group_id || "wg"}-${index}`,
       api_id: item?.id ?? "",
@@ -178,14 +248,13 @@ const WiegandGroup = () => {
       sn: item?.sn ?? "-",
       timestamp: item?.timestamp ?? "-",
       del_flag: item?.del_flag ?? "0",
-      start: firstConfig?.start ?? "-",
-      end: firstConfig?.end ?? "-",
-      weekdaysRaw: Array.isArray(firstConfig?.weekdays) ? firstConfig.weekdays : [],
-      weekdays: Array.isArray(firstConfig?.weekdays)
-        ? firstConfig.weekdays
-            .map((day: number) => weekdayLabelMap[day] || String(day))
-            .join(", ")
-        : "-",
+      start: formatTimeForDisplay(firstConfig?.start),
+      end: formatTimeForDisplay(firstConfig?.end),
+      weekdaysRaw: rawWeekdays,
+      weekdays:
+        weekdaysArray.length > 0
+          ? weekdaysArray.map((day: number) => weekdayLabelMap[day] || String(day)).join(", ")
+          : "-",
     };
   });
 
@@ -214,7 +283,7 @@ const WiegandGroup = () => {
       user_id: item?.user_id ?? "-",
       group_uuid: item?.group_uuid ?? "-",
       group_id: item?.group_id ?? "-",
-      timestamp: item?.timestamp ?? "-",
+      timestamp: normalizeUnixSeconds(item?.timestamp) || "-",
       del_flag: typeof item?.del_flag === "boolean" ? (item.del_flag ? "true" : "false") : "-",
     };
   });
@@ -264,9 +333,9 @@ const WiegandGroup = () => {
       del_flag: Number(form.del_flag),
       time_configs: [
         {
-          start: form.start,
-          end: form.end,
-          weekdays: form.weekdays,
+          start: timeStringToSeconds(form.start),
+          end: timeStringToSeconds(form.end),
+          weekdays: weekdaysToBitmask(form.weekdays),
         },
       ],
     };
@@ -344,7 +413,7 @@ const WiegandGroup = () => {
               setIsEditMode(false);
               setSelectedId("");
               setSnSearchText("");
-              setForm({ ...initialForm, timestamp: String(Date.now()) });
+              setForm({ ...initialForm, timestamp: String(Math.floor(Date.now() / 1000)) });
               setOpen(true);
             }}
           >
@@ -401,20 +470,28 @@ const WiegandGroup = () => {
                   fullWidth
                 />
 
-                <Autocomplete
+                <Autocomplete<DeviceSnOption, false, true, false>
                   options={snOptions}
                   freeSolo
-                  value={form.sn}
+                  value={snOptions.find((option) => option.sn === form.sn) || (form.sn ? form.sn : null)}
                   inputValue={snSearchText}
                   onChange={(_, value) => {
-                    const selectedSn = String(value || "");
+                    const selectedSn = typeof value === "string" ? value : String(value?.sn || "");
+                    const selectedLabel =
+                      typeof value === "string" ? value : String(value?.label || selectedSn);
                     setForm((prev) => ({ ...prev, sn: selectedSn }));
-                    setSnSearchText(selectedSn);
+                    setSnSearchText(selectedLabel);
                   }}
-                  onInputChange={(_, value) => {
+                  onInputChange={(_, value, reason) => {
                     setSnSearchText(value || "");
-                    setForm((prev) => ({ ...prev, sn: value || "" }));
+                    if (reason === "input" || reason === "clear") {
+                      setForm((prev) => ({ ...prev, sn: value || "" }));
+                    }
                   }}
+                  getOptionLabel={(option) => (typeof option === "string" ? option : option.label)}
+                  isOptionEqualToValue={(option, value) =>
+                    typeof value === "string" ? option.sn === value : option.sn === value.sn
+                  }
                   loading={isDevicesLoading}
                   fullWidth
                   renderInput={(params) => (
@@ -433,6 +510,7 @@ const WiegandGroup = () => {
                   value={form.timestamp}
                   onChange={(e) => setForm((prev) => ({ ...prev, timestamp: e.target.value }))}
                   required
+                  disabled
                   fullWidth
                 />
 
@@ -507,7 +585,11 @@ const WiegandGroup = () => {
             onClick={() => {
               setAssignError("");
               setAssignSuccess("");
-              setAssignForm({ ...initialAssignForm, timestamp: String(Date.now()), del_flag: false });
+              setAssignForm({
+                ...initialAssignForm,
+                timestamp: String(Math.floor(Date.now() / 1000)),
+                del_flag: false,
+              });
               setAssignSnSearchText("");
               setAssignUserSearchText("");
               setAssignOpen(true);
@@ -560,7 +642,7 @@ const WiegandGroup = () => {
 
                 <Autocomplete
                   options={groupOptions}
-                  value={groupOptions.find((option) => option.group_id === assignForm.group_id) || null}
+                  value={groupOptions.find((option: any) => option.group_id === assignForm.group_id) || null}
                   onChange={(_, value) => {
                     const selectedGroupId = value?.group_id || "";
                     const selectedSn = value?.sn || "";
@@ -571,8 +653,8 @@ const WiegandGroup = () => {
                     }));
                     if (selectedSn) setAssignSnSearchText(selectedSn);
                   }}
-                  getOptionLabel={(option) => option.group_id || ""}
-                  isOptionEqualToValue={(a, b) => a.group_id === b.group_id}
+                  getOptionLabel={(option: any) => option.group_id || ""}
+                  isOptionEqualToValue={(a: any, b: any) => a.group_id === b.group_id}
                   fullWidth
                   renderInput={(params) => <TextField {...params} label="Group ID" required fullWidth />}
                 />
@@ -620,6 +702,7 @@ const WiegandGroup = () => {
                   type="number"
                   value={assignForm.timestamp}
                   onChange={(e) => setAssignForm((prev) => ({ ...prev, timestamp: e.target.value }))}
+                  disabled
                   required
                   fullWidth
                 />

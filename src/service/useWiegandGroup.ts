@@ -2,9 +2,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
 
 interface TimeConfigPayload {
-  start: string;
-  end: string;
-  weekdays: number[];
+  start: number;
+  end: number;
+  weekdays: number;
 }
 
 export interface CreateWiegandGroupPayload {
