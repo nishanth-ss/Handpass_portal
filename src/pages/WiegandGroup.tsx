@@ -170,12 +170,22 @@ const WiegandGroup = () => {
         .map((device: any) => {
           const sn = String(device.sn);
           const deviceName = String(device?.device_name || "").trim();
-          return [sn, { sn, label: deviceName || sn }];
+          const label = deviceName ? `${deviceName} (${sn})` : sn;
+          return [sn, { sn, label }];
         })
     ).values()
   );
-  const assignSnOptions = Array.from(
-    new Set((assignDevicesData?.data || []).map((device: any) => device?.sn).filter(Boolean))
+  const assignSnOptions: DeviceSnOption[] = Array.from(
+    new Map(
+      (assignDevicesData?.data || [])
+        .filter((device: any) => device?.sn)
+        .map((device: any) => {
+          const sn = String(device.sn);
+          const deviceName = String(device?.device_name || device?.name || "").trim();
+          const label = deviceName ? `${deviceName} (${sn})` : sn;
+          return [sn, { sn, label }];
+        })
+    ).values()
   );
 
   const list = Array.isArray(data)
@@ -193,7 +203,7 @@ const WiegandGroup = () => {
     setSelectedId(String(row.api_id ?? row.id ?? ""));
     setForm({
       group_id: String(row.group_id ?? ""),
-      sn: String(row.sn ?? ""),
+      sn: String(row.snRaw ?? row.sn ?? ""),
       timestamp: normalizeUnixSeconds(row.timestamp),
       del_flag: String(row.del_flag ?? "0"),
       start: toTimeInputValue(row.start),
@@ -206,13 +216,13 @@ const WiegandGroup = () => {
           ? bitmaskToWeekdays(row.weekdaysRaw)
           : [],
     });
-    setSnSearchText(String(row.sn ?? ""));
+    setSnSearchText(String(row.snRaw ?? row.sn ?? ""));
     setOpen(true);
   };
 
   const columns: GridColDef[] = [
-    { field: "group_id", headerName: "Group ID", flex: 1 },
-    { field: "sn", headerName: "SN", flex: 1.2 },
+    { field: "group_id", headerName: "Group ID", flex: 0.7 },
+    { field: "sn", headerName: "SN", flex: 1.5 },
     { field: "timestamp", headerName: "Timestamp", flex: 1 },
     { field: "del_flag", headerName: "Del Flag", flex: 0.7 },
     { field: "start", headerName: "Start", flex: 0.8 },
@@ -234,6 +244,10 @@ const WiegandGroup = () => {
   const rows = list.map((item: any, index: number) => {
     const firstConfig = item?.time_configs?.[0];
     const rawWeekdays = firstConfig?.weekdays;
+    const deviceName = String(item?.device?.name ?? "").trim();
+    const serialNumber = String(item?.sn ?? "").trim();
+    const snDisplay =
+      deviceName && serialNumber ? `${deviceName} (${serialNumber})` : serialNumber || deviceName || "-";
     const weekdaysArray: Weekday[] = Array.isArray(rawWeekdays)
       ? rawWeekdays
           .map((day: number) => Number(day))
@@ -245,7 +259,8 @@ const WiegandGroup = () => {
       id: item?.id ?? `${item?.group_id || "wg"}-${index}`,
       api_id: item?.id ?? "",
       group_id: item?.group_id ?? "-",
-      sn: item?.sn ?? "-",
+      sn: snDisplay,
+      snRaw: serialNumber,
       timestamp: item?.timestamp ?? "-",
       del_flag: item?.del_flag ?? "0",
       start: formatTimeForDisplay(firstConfig?.start),
@@ -268,8 +283,8 @@ const WiegandGroup = () => {
 
   const assignColumns: GridColDef[] = [
     { field: "id", headerName: "ID", flex: 1.4 },
-    { field: "sn", headerName: "SN", flex: 1.1 },
-    { field: "user_id", headerName: "User ID", flex: 1.4 },
+    { field: "sn", headerName: "Device", flex: 1.8 },
+    { field: "user_id", headerName: "User ID", flex: 0.7 },
     { field: "group_uuid", headerName: "Group UUID", flex: 1.4 },
     { field: "group_id", headerName: "Group ID", flex: 0.8 },
     { field: "timestamp", headerName: "Timestamp", flex: 1 },
@@ -279,7 +294,7 @@ const WiegandGroup = () => {
   const assignRows = assignList.map((item: any, index: number) => {
     return {
       id: item?.id ?? item?.user_wiegand_id ?? `${item?.user_id || "uw"}-${index}`,
-      sn: item?.sn ?? "-",
+      sn: item?.device_name ?? "-",
       user_id: item?.user_id ?? "-",
       group_uuid: item?.group_uuid ?? "-",
       group_id: item?.group_id ?? "-",
@@ -659,20 +674,30 @@ const WiegandGroup = () => {
                   renderInput={(params) => <TextField {...params} label="Group ID" required fullWidth />}
                 />
 
-                <Autocomplete
+                <Autocomplete<DeviceSnOption, false, true, false>
                   options={assignSnOptions}
                   freeSolo
-                  value={assignForm.sn}
+                  value={
+                    assignSnOptions.find((option) => option.sn === assignForm.sn) || (assignForm.sn ? assignForm.sn : null)
+                  }
                   inputValue={assignSnSearchText}
                   onChange={(_, value) => {
-                    const selectedSn = String(value || "");
+                    const selectedSn = typeof value === "string" ? value : String(value?.sn || "");
+                    const selectedLabel =
+                      typeof value === "string" ? value : String(value?.label || selectedSn);
                     setAssignForm((prev) => ({ ...prev, sn: selectedSn }));
-                    setAssignSnSearchText(selectedSn);
+                    setAssignSnSearchText(selectedLabel);
                   }}
-                  onInputChange={(_, value) => {
+                  onInputChange={(_, value, reason) => {
                     setAssignSnSearchText(value || "");
-                    setAssignForm((prev) => ({ ...prev, sn: value || "" }));
+                    if (reason === "input" || reason === "clear") {
+                      setAssignForm((prev) => ({ ...prev, sn: value || "" }));
+                    }
                   }}
+                  getOptionLabel={(option) => (typeof option === "string" ? option : option.label)}
+                  isOptionEqualToValue={(option, value) =>
+                    typeof value === "string" ? option.sn === value : option.sn === value.sn
+                  }
                   loading={isAssignDevicesLoading}
                   fullWidth
                   renderInput={(params) => <TextField {...params} label="SN" required fullWidth />}
