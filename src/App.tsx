@@ -60,7 +60,7 @@ function App() {
                   <Route path="/time-schedules" element={<TimeSchedules />} />
                   <Route path="/reports" element={<Reports />} />
                   <Route path="/group-management" element={<GroupManagement />} />
-                  <Route path="/wiegand-management" element={<WiegandGroup />} />
+                  <Route path="/remote-management" element={<WiegandGroup />} />
                   <Route path="/firm-check" element={<FirmwareCheck />} />
                   <Route path="/settings" element={<AttenenceModule />} />
                 </Route>

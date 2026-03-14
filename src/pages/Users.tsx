@@ -12,7 +12,13 @@ import UserDetailsDialog from '../components/user/UserDetailsDialog';
 
 const Users = () => {
   const [page, setPage] = useState(0);
-  const [editUser, setEditUser] = useState<{ id: number; name: string; email: string; shift_id?: string } | null>(null);
+  const [editUser, setEditUser] = useState<{
+    id: number;
+    name: string;
+    email: string;
+    phone_number?: string;
+    shift_id?: string;
+  } | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const deleteMutation = useDeleteUser(); // FIX HOOK HERE
   const queryClient = useQueryClient();
@@ -28,14 +34,20 @@ const Users = () => {
   if (isError) return <p>Error fetching users!</p>;
 
   const handleEdit = (row: any) => {
-    setEditUser({ id: row.id, name: row.name, email: row.email ?? "", shift_id: row.shift_id });
+    setEditUser({
+      id: row.id,
+      name: row.name,
+      email: row.email ?? "",
+      phone_number: row.phone_number ?? "",
+      shift_id: row.shift_id,
+    });
   };
 
   const columns: GridColDef[] = [
     {
       field: "username", headerName: "Name", flex: 1,
       renderCell: (param) => {
-        return <h1>{param.row.name} - {param.row.device_name}</h1>
+        return <h1>{param.row.name}</h1>
       }
     },
     {
@@ -46,7 +58,7 @@ const Users = () => {
     },
     { field: "email", headerName: "Email", flex: 1 },
     {
-      field: "shift_name", headerName: "Shift", flex: 1
+      field: "phone_number", headerName: "Phone Number", flex: 1
     },
     {
       field: "created_at", headerName: "Created At", flex: 1,
@@ -57,7 +69,7 @@ const Users = () => {
     {
       field: "actions",
       headerName: "Actions",
-      flex: 0.5,
+      flex: 1,
       sortable: false,
       renderCell: (params) => (
         <div>
@@ -79,6 +91,7 @@ const Users = () => {
     id: user.id,
     name: user.name,
     email: user.email,
+    phone_number: user.phone_number ?? user.phone ?? "",
     user_id: user.user_id,
     create_at: user.created_at,
     sn: user?.sn,
@@ -108,7 +121,7 @@ const Users = () => {
       <h1 className='text-primary font-extrabold text-4xl'>User Management</h1>
 
       <div className='flex items-center justify-between mb-4'>
-        <p>Manage physical access terminals and cameras.</p>
+        {/* <p>Manage physical access terminals and cameras.</p> */}
         {/* <Button variant="contained" className='bg-primary!' startIcon={<TiPlus />}>
           Add New User
         </Button> */}
@@ -137,11 +150,18 @@ const Users = () => {
           open={true}
           defaultName={editUser.name}
           defaultEmail={editUser.email}
+          defaultPhoneNumber={editUser.phone_number}
           defaultShiftId={editUser.shift_id}
           onClose={() => setEditUser(null)}
           onSubmit={(values: any) => {
             updateUser.mutate(
-              { id: editUser.id, name: values.name, email: values.email, shift_id: values.shift_id },
+              {
+                id: editUser.id,
+                name: values.name,
+                email: values.email,
+                phone_number: values.phone_number,
+                shift_id: values.shift_id,
+              },
               { onSuccess: () => setEditUser(null) }
             );
           }}

@@ -1,7 +1,5 @@
 import { LayoutDashboard, Users, Network, Clock, FileText, Settings } from "lucide-react";
 import { MonitorSmartphone } from "lucide-react";
-import { IoHardwareChipSharp } from "react-icons/io5";
-import { FaLayerGroup as Group } from "react-icons/fa";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { LogOut } from "lucide-react";
 import logo from "../assets/AGS_logo.png"
@@ -11,12 +9,10 @@ export const NAV_ITEMS = [
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { label: "Users", href: "/users", icon: Users },
     { label: "Devices", href: "/devices", icon: MonitorSmartphone },
-    { label: "Remote Groups", href: "/remote-groups", icon: Network },
-    { label: "Time Schedules", href: "/time-schedules", icon: Clock },
     { label: "Reports", href: "/reports", icon: FileText },
     // { label: "Group Management", href: "/group-management", icon: Group },
-    { label: "Wiegand Group", href: "/wiegand-management", icon: Group },
-    { label: "Firmware Check", href: "/firm-check", icon: IoHardwareChipSharp },
+    { label: "Remote/Time Group", href: "/remote-management", icon: Clock },
+    // { label: "Firmware Check", href: "/firm-check", icon: IoHardwareChipSharp },
     { label: "Settings", href: "/settings", icon: Settings },
 ];
 

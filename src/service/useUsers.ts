@@ -37,14 +37,20 @@ export const useUpdateUser = () => {
       id,
       name,
       email,
+      phone_number,
       shift_id,
     }: {
       id: number;
       name: string;
       email: string;
+      phone_number?: string;
       shift_id?: string;
     }) => {
-      const payload: { name: string; email: string; shift_id?: string } = { name, email };
+      const payload: { name: string; email: string; phone_number?: string; shift_id?: string } = {
+        name,
+        email,
+      };
+      if (phone_number) payload.phone_number = phone_number;
       if (shift_id) payload.shift_id = shift_id;
       const { data } = await api.put(`/api/users/update-user/${id}`, payload);
       return data;

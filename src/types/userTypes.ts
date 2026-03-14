@@ -2,6 +2,7 @@ export type UserData = {
   id: string;
   name: string;
   email: string;
+  phone_number?: string | null;
   role: string;
   sn: string;
   user_id: string;
@@ -40,6 +41,7 @@ export interface UserWithGroups {
   id: string;
   name: string;
   email: string | null;
+  phone_number?: string | null;
   password_hash: string | null;
   sn: string | null;
   user_id: string | null;
@@ -58,6 +60,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  phone_number?: string | null;
   role: string;
   sn: string | null;
   admin_auth?: number;

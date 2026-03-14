@@ -17,12 +17,19 @@ import type { ShiftConfig } from "../../types/settingTypes";
 const schema = yup.object({
   name: yup.string().required("Name is required"),
   email: yup.string().email("Enter a valid email").required("Email is required"),
+  phone_number: yup
+    .string()
+    .transform((value) => (value ?? "").replace(/\D/g, ""))
+    .max(15, "Phone number is too long")
+    .default("")
+    .defined(),
   shift_id: yup.string().defined(),
 });
 
 type EditUserFormValues = {
   name: string;
   email: string;
+  phone_number: string;
   shift_id: string;
 };
 
@@ -31,8 +38,9 @@ type EditUserDialogProps = {
   onClose: () => void;
   defaultName: string;
   defaultEmail: string;
+  defaultPhoneNumber?: string;
   defaultShiftId?: string;
-  onSubmit: (values: { name: string; email: string; shift_id?: string }) => void;
+  onSubmit: (values: { name: string; email: string; phone_number?: string; shift_id?: string }) => void;
 };
 
 const getShiftId = (shift: ShiftConfig | null | undefined): string => {
@@ -48,6 +56,7 @@ export const EditUserDialog = ({
   onClose,
   defaultName,
   defaultEmail,
+  defaultPhoneNumber,
   defaultShiftId,
   onSubmit,
 }: EditUserDialogProps) => {
@@ -63,6 +72,7 @@ export const EditUserDialog = ({
     defaultValues: {
       name: defaultName,
       email: defaultEmail,
+      phone_number: defaultPhoneNumber ?? "",
       shift_id: defaultShiftId ?? "",
     },
     resolver: yupResolver(schema),
@@ -72,9 +82,10 @@ export const EditUserDialog = ({
     reset({
       name: defaultName,
       email: defaultEmail,
+      phone_number: defaultPhoneNumber ?? "",
       shift_id: defaultShiftId ?? "",
     });
-  }, [defaultName, defaultEmail, defaultShiftId, reset]);
+  }, [defaultName, defaultEmail, defaultPhoneNumber, defaultShiftId, reset]);
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
@@ -84,6 +95,7 @@ export const EditUserDialog = ({
           onSubmit({
             name: values.name,
             email: values.email,
+            phone_number: values.phone_number ? values.phone_number.replace(/\D/g, "") : undefined,
             shift_id: values.shift_id || undefined,
           }),
         )}
@@ -105,6 +117,20 @@ export const EditUserDialog = ({
             {...register("email")}
             error={!!errors.email}
             helperText={errors.email?.message?.toString()}
+          />
+          <TextField
+            label="Phone Number"
+            type="number"
+            fullWidth
+            margin="normal"
+            {...register("phone_number")}
+            error={!!errors.phone_number}
+            helperText={errors.phone_number?.message?.toString()}
+            inputProps={{
+              inputMode: "numeric",
+              pattern: "[0-9]*",
+              onWheel: (e) => e.currentTarget.blur(),
+            }}
           />
           <Controller
             control={control}
