@@ -1,18 +1,8 @@
-import {
-  Autocomplete,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  TextField,
-} from "@mui/material";
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, FormHelperText, Switch, TextField } from "@mui/material";
 import { Controller, useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { useEffect } from "react";
-import { useShift } from "../../service/useSettings";
-import type { ShiftConfig } from "../../types/settingTypes";
 
 const schema = yup.object({
   name: yup.string().required("Name is required"),
@@ -23,14 +13,23 @@ const schema = yup.object({
     .max(15, "Phone number is too long")
     .default("")
     .defined(),
-  shift_id: yup.string().defined(),
+  admin_auth: yup
+    .number()
+    .transform((value, originalValue) => {
+      if (originalValue === "" || originalValue === null || originalValue === undefined) {
+        return 0;
+      }
+      return Number(originalValue);
+    })
+    .oneOf([0, 1], "Admin Auth must be 0 or 1")
+    .required("Admin Auth is required"),
 });
 
 type EditUserFormValues = {
   name: string;
   email: string;
   phone_number: string;
-  shift_id: string;
+  admin_auth: number;
 };
 
 type EditUserDialogProps = {
@@ -39,17 +38,14 @@ type EditUserDialogProps = {
   defaultName: string;
   defaultEmail: string;
   defaultPhoneNumber?: string;
-  defaultShiftId?: string;
-  onSubmit: (values: { name: string; email: string; phone_number?: string; shift_id?: string }) => void;
+  defaultAdminAuth?: number;
+  onSubmit: (values: {
+    name: string;
+    email: string;
+    phone_number?: string;
+    admin_auth: number;
+  }) => void;
 };
-
-const getShiftId = (shift: ShiftConfig | null | undefined): string => {
-  const id = shift?.id ?? shift?._id;
-  return id !== undefined && id !== null ? String(id) : "";
-};
-
-const getShiftLabel = (shift: ShiftConfig): string =>
-  `${shift.shift_name ?? "Shift"} (${shift.start_time ?? "--:--"} - ${shift.end_time ?? "--:--"})`;
 
 export const EditUserDialog = ({
   open,
@@ -57,11 +53,9 @@ export const EditUserDialog = ({
   defaultName,
   defaultEmail,
   defaultPhoneNumber,
-  defaultShiftId,
+  defaultAdminAuth = 0,
   onSubmit,
 }: EditUserDialogProps) => {
-  const { data: shifts = [], isLoading: isShiftLoading } = useShift(open);
-
   const {
     control,
     register,
@@ -73,7 +67,7 @@ export const EditUserDialog = ({
       name: defaultName,
       email: defaultEmail,
       phone_number: defaultPhoneNumber ?? "",
-      shift_id: defaultShiftId ?? "",
+      admin_auth: defaultAdminAuth,
     },
     resolver: yupResolver(schema),
   });
@@ -83,9 +77,9 @@ export const EditUserDialog = ({
       name: defaultName,
       email: defaultEmail,
       phone_number: defaultPhoneNumber ?? "",
-      shift_id: defaultShiftId ?? "",
+      admin_auth: defaultAdminAuth,
     });
-  }, [defaultName, defaultEmail, defaultPhoneNumber, defaultShiftId, reset]);
+  }, [defaultName, defaultEmail, defaultPhoneNumber, defaultAdminAuth, reset]);
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
@@ -96,7 +90,7 @@ export const EditUserDialog = ({
             name: values.name,
             email: values.email,
             phone_number: values.phone_number ? values.phone_number.replace(/\D/g, "") : undefined,
-            shift_id: values.shift_id || undefined,
+            admin_auth: Number(values.admin_auth),
           }),
         )}
       >
@@ -134,25 +128,23 @@ export const EditUserDialog = ({
           />
           <Controller
             control={control}
-            name="shift_id"
+            name="admin_auth"
             render={({ field }) => (
-              <Autocomplete
-                options={shifts}
-                loading={isShiftLoading}
-                value={shifts.find((shift) => getShiftId(shift) === (field.value ?? "")) ?? null}
-                onChange={(_, value) => field.onChange(getShiftId(value))}
-                getOptionLabel={getShiftLabel}
-                isOptionEqualToValue={(option, value) => getShiftId(option) === getShiftId(value)}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Shift"
-                    margin="normal"
-                    fullWidth
-                    placeholder={isShiftLoading ? "Loading shifts..." : "Select shift"}
-                  />
-                )}
-              />
+              <div className="mt-4">
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={Number(field.value) === 1}
+                      onChange={(_, checked) => field.onChange(checked ? 1 : 0)}
+                    />
+                  }
+                  label="Palm Access Without Password"
+                />
+                <FormHelperText error={!!errors.admin_auth}>
+                  {errors.admin_auth?.message?.toString() ??
+                    "If enabled, the user can access with palm only. If disabled, password is also required."}
+                </FormHelperText>
+              </div>
             )}
           />
         </DialogContent>
