@@ -1,3 +1,14 @@
+export type UserGroupTimeConfig = {
+  end: number;
+  start: number;
+  weekdays: number;
+};
+
+export type UserGroup = {
+  group_id: string;
+  time_configs?: UserGroupTimeConfig[] | null;
+};
+
 export type UserData = {
   id: string;
   name: string;
@@ -9,6 +20,7 @@ export type UserData = {
   image_left: string;
   wiegand_flag: number;
   admin_auth: number;
+  groups?: UserGroup[];
   created_at: string;
   updated_at: string;
 };
