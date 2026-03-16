@@ -135,7 +135,7 @@ const Users = () => {
     {
       field: "actions",
       headerName: "Actions",
-      flex: 1,
+      flex: 1.5,
       sortable: false,
       renderCell: (params) => (
         <div>
@@ -198,26 +198,28 @@ const Users = () => {
         </Button> */}
       </div>
 
-      <div style={{ height: 650, width: "100%" }}>
-        <DataGrid
-          rows={rows || []}
-          columns={columns}
-          pagination
-          paginationMode="server"
-          rowCount={data?.pagination.total || 0}
-          paginationModel={{ page, pageSize: limit }}
-          onPaginationModelChange={(model) => setPage(model.page)}
-          loading={isFetching}
-          disableRowSelectionOnClick
-          disableColumnSelector
-          getRowHeight={() => "auto"}
-          sx={{
-            "& .MuiDataGrid-cell:focus": { outline: "none" },
-            "& .MuiDataGrid-cell": {
-              alignItems: "center",
-            },
-          }}
-        />
+      <div className="w-full overflow-x-auto">
+        <div className="min-w-[1100px]" style={{ height: 650 }}>
+          <DataGrid
+            rows={rows || []}
+            columns={columns}
+            pagination
+            paginationMode="server"
+            rowCount={data?.pagination.total || 0}
+            paginationModel={{ page, pageSize: limit }}
+            onPaginationModelChange={(model) => setPage(model.page)}
+            loading={isFetching}
+            disableRowSelectionOnClick
+            disableColumnSelector
+            getRowHeight={() => "auto"}
+            sx={{
+              "& .MuiDataGrid-cell:focus": { outline: "none" },
+              "& .MuiDataGrid-cell": {
+                alignItems: "center",
+              },
+            }}
+          />
+        </div>
       </div>
 
       {editUser && (
