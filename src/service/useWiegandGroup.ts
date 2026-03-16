@@ -30,13 +30,14 @@ export interface UpdateUserWiegandPayload {
   timestamp: number;
 }
 
-export function useWiegandGroups(delFlag = 0) {
+export function useWiegandGroups(delFlag = 0, enabled = true) {
   return useQuery({
     queryKey: ["wiegandGroups", delFlag],
     queryFn: async () => {
       const res = await api.get(`/v1/api/wiegand_groups?del_flag=${delFlag}`);
       return res.data;
     },
+    enabled,
     staleTime: 1000 * 60,
     retry: false,
   });

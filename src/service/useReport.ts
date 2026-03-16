@@ -31,5 +31,44 @@ export function useReportsPolling(payload?: ReportPayload) {
   });
 }
 
+export type AccessListPayload = {
+  report_type?: string;
+  page?: number;
+  limit?: number;
+  sortField?: string;
+  sortOrder?: "asc" | "desc";
+  id?: string;
+  user_id?: string;
+  format?: string;
+  start_date?: unknown;
+  end_date?: unknown;
+};
+
+export function useAccessListQuery(payload: AccessListPayload, enabled: boolean) {
+  return useQuery({
+    queryKey: ["access-list", payload],
+    queryFn: async () => {
+      const res = await api.post(`/api/report/access-list`, payload);
+      return res.data;
+    },
+    enabled,
+    retry: false,
+  });
+}
+
+export function useAccessListMutation() {
+  return useMutation({
+    mutationFn: async (payload: AccessListPayload) => {
+      const format = payload.format ?? "json";
+      const responseType = format === "json" ? "json" : "blob";
+      const res = await api.post(`/api/report/access-list`, payload, {
+        responseType: responseType as any,
+      });
+      return res.data;
+    },
+    retry: false,
+  });
+}
+
 
 

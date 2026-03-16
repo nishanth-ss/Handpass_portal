@@ -23,7 +23,7 @@ const Users = lazy(() => import("./pages/Users"));
 const Devices = lazy(() => import("./pages/Devices"));
 const RemoteGroups = lazy(() => import("./pages/RemoteGroups"));
 const TimeSchedules = lazy(() => import("./pages/TimeSchedules"));
-const Reports = lazy(() => import("./pages/Reports"));
+const Reports = lazy(() => import("./pages/MainReport"));
 const GroupManagement = lazy(() => import("./pages/GroupManagement"));
 const WiegandGroup = lazy(()=> import("./pages/WiegandGroup"));
 const FirmwareCheck = lazy(() => import("./pages/FirmwareCheck"));

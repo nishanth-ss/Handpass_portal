@@ -3,18 +3,19 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
 import type { DeviceResponse } from "../types/deviceTypes";
 
-export function useDevices(page = 1, search = "") {
-    return useQuery({
-        queryKey: ["devices", page, search],
-        queryFn: async (): Promise<DeviceResponse> => {
-            const res = await api.post(`/v1/device/getAll`, undefined, {
-                params: search ? { search } : undefined,
-            });
-            return res.data;
-        },
-        staleTime: 1000 * 60,
-        retry: false,
-    });
+export function useDevices(page = 1, search = "", enabled = true) {
+  return useQuery<DeviceResponse>({
+    queryKey: ["devices", page, search],
+    queryFn: async (): Promise<DeviceResponse> => {
+      const res = await api.post(`/v1/device/getAll`, undefined, {
+        params: search ? { search } : undefined,
+      });
+      return res.data;
+    },
+    enabled,
+    staleTime: 1000 * 60,
+    retry: false,
+  });
 }
 
 // update device
