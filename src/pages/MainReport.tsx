@@ -229,7 +229,7 @@ const reportTabs: Array<{ key: ReportType; label: string; hasSearch: boolean }> 
   { key: "user_report", label: "User Report", hasSearch: true },
   { key: "device_report", label: "Device Report", hasSearch: true },
   { key: "group_report", label: "Group Report", hasSearch: true },
-  { key: "user_wiegand_report", label: "User Wiegand Report", hasSearch: true },
+  { key: "user_wiegand_report", label: "User Remote/Time Report", hasSearch: true },
   { key: "access_log_report", label: "Access Log Report", hasSearch: false },
 ];
 
@@ -700,6 +700,9 @@ const MainReport = () => {
   };
 
   const handleDownload = () => {
+    if (reportType === "group_report" && !selectedWiegandGroup?.id) {
+      return;
+    }
 
     const payload = {
       report_type: reportType,
@@ -710,8 +713,12 @@ const MainReport = () => {
       format: downloadFormat,
       start_date: startDate ? startDate.format("YYYY-MM-DD") : undefined,
       end_date: endDate ? endDate.format("YYYY-MM-DD") : undefined,
-      id: reportType === "device_report" ? selectedDevice?.id : reportType === "group_report" ? selectedWiegandGroup?.group_id : undefined,
-      wiegand_groups: reportType === "group_report" ? selectedWiegandGroup?.group_id : undefined,
+      id:
+        reportType === "device_report"
+          ? selectedDevice?.id
+          : reportType === "group_report"
+            ? selectedWiegandGroup?.id
+            : undefined,
       user_id:
         reportType === "user_report" || reportType === "user_wiegand_report"
           ? selectedUser?.user_id ?? undefined
@@ -917,7 +924,7 @@ const MainReport = () => {
 
             {reportType === "group_report" && (
               <SearchSuggest<WiegandGroup>
-                label="Search Wiegand Group"
+                label="Search Group"
                 value={searchText}
                 onChange={(v) => {
                   setSearchText(v);
@@ -926,7 +933,7 @@ const MainReport = () => {
                 }}
                 items={filteredWiegandGroups}
                 loading={isWiegandGroupsFetching}
-                getKey={(g) => `${g.group_id}:${g.sn ?? ""}`}
+                getKey={(g) => `${g.id ?? g.group_id}:${g.sn ?? ""}`}
                 getPrimary={(g) => g.group_id}
                 getSecondary={(g) => g.sn ?? ""}
                 onSelect={(g) => {
