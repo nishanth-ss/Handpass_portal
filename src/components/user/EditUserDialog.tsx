@@ -15,7 +15,7 @@ const schema = yup.object({
     .defined(),
   admin_auth: yup
     .number()
-    .transform((value, originalValue) => {
+    .transform((_value, originalValue) => {
       if (originalValue === "" || originalValue === null || originalValue === undefined) {
         return 0;
       }

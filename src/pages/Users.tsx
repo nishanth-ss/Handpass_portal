@@ -12,7 +12,7 @@ import UserDetailsDialog from '../components/user/UserDetailsDialog';
 import type { UserData, UserGroup } from '../types/userTypes';
 
 type UserRow = {
-  id: number;
+  id: string;
   name: string;
   email: string;
   phone_number: string;
@@ -28,13 +28,13 @@ type UserRow = {
 const Users = () => {
   const [page, setPage] = useState(0);
   const [editUser, setEditUser] = useState<{
-    id: number;
+    id: string;
     name: string;
     email: string;
     phone_number?: string;
     admin_auth: number;
   } | null>(null);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const deleteMutation = useDeleteUser(); // FIX HOOK HERE
   const queryClient = useQueryClient();
   const [userId, setUserId] = useState("");
@@ -61,20 +61,20 @@ const Users = () => {
 
   const columns: GridColDef[] = [
     {
-      field: "username", headerName: "Name", flex: 1,
+      field: "username", headerName: "Name", flex: 0.7,
       renderCell: (param) => {
         return <h1>{param.row.name}</h1>
       }
     },
     {
-      field: "userId", headerName: "User ID", flex: 1,
+      field: "userId", headerName: "User ID", flex: 0.7,
       renderCell: (param) => {
         return <h1>{param.row.user_id}</h1>
       }
     },
     { field: "email", headerName: "Email", flex: 1 },
     {
-      field: "phone_number", headerName: "Phone Number", flex: 1
+      field: "phone_number", headerName: "Phone Number", flex: 0.7
     },
     {
       field: "groups",
@@ -121,7 +121,12 @@ const Users = () => {
       }
     },
     {
-      field: "admin_auth", headerName: "Admin Auth", flex: 0.7
+      field: "admin_auth",
+      headerName: "Admin Auth",
+      flex: 0.5,
+      renderCell: (params) => (
+        <span>{Number(params.row.admin_auth) === 0 ? "false" : "true"}</span>
+      ),
     },
     {
       field: "created_at", headerName: "Created At", flex: 1,
@@ -176,7 +181,7 @@ const Users = () => {
   const handleConfirmDelete = () => {
     if (!selectedId) return;
 
-    deleteMutation.mutate(String(selectedId), {
+    deleteMutation.mutate(selectedId, {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ["users"] });
         setSelectedId(null);
@@ -249,7 +254,7 @@ const Users = () => {
           onSubmit={(values) => {
             updateUser.mutate(
               {
-                id: editUser.id,
+                id: String(editUser.id),
                 name: values.name,
                 email: values.email,
                 phone_number: values.phone_number,
