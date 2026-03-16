@@ -1,4 +1,4 @@
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, FormHelperText, Switch, TextField } from "@mui/material";
+import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, FormHelperText, Switch, TextField } from "@mui/material";
 import { Controller, useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -39,6 +39,8 @@ type EditUserDialogProps = {
   defaultEmail: string;
   defaultPhoneNumber?: string;
   defaultAdminAuth?: number;
+  submitError?: string | null;
+  isSaving?: boolean;
   onSubmit: (values: {
     name: string;
     email: string;
@@ -54,6 +56,8 @@ export const EditUserDialog = ({
   defaultEmail,
   defaultPhoneNumber,
   defaultAdminAuth = 0,
+  submitError,
+  isSaving = false,
   onSubmit,
 }: EditUserDialogProps) => {
   const {
@@ -95,6 +99,11 @@ export const EditUserDialog = ({
         )}
       >
         <DialogContent>
+          {submitError ? (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {submitError}
+            </Alert>
+          ) : null}
           <TextField
             label="Name"
             fullWidth
@@ -150,7 +159,7 @@ export const EditUserDialog = ({
         </DialogContent>
         <DialogActions>
           <Button onClick={onClose} color="inherit">Cancel</Button>
-          <Button type="submit" disabled={isSubmitting} variant="contained">Save</Button>
+          <Button type="submit" disabled={isSubmitting || isSaving} variant="contained">Save</Button>
         </DialogActions>
       </form>
     </Dialog>

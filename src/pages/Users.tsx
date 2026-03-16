@@ -7,6 +7,7 @@ import { Edit, Eye, Trash } from 'lucide-react';
 import { EditUserDialog } from '../components/user/EditUserDialog';
 import { DeleteConfirmDialog } from '../components/common/DeleteConfirmDialog';
 import { useQueryClient } from '@tanstack/react-query';
+import axios from 'axios';
 import UserDetailsDialog from '../components/user/UserDetailsDialog';
 import type { UserData, UserGroup } from '../types/userTypes';
 
@@ -48,6 +49,7 @@ const Users = () => {
   if (isError) return <p>Error fetching users!</p>;
 
   const handleEdit = (row: UserRow) => {
+    updateUser.reset();
     setEditUser({
       id: row.id,
       name: row.name,
@@ -182,6 +184,22 @@ const Users = () => {
     });
   };
 
+  const updateErrorMessage = (() => {
+    if (!updateUser.error) return null;
+    if (axios.isAxiosError(updateUser.error)) {
+      return (
+        updateUser.error.response?.data?.msg ||
+        updateUser.error.response?.data?.message ||
+        updateUser.error.message ||
+        "Failed to update user."
+      );
+    }
+    if (updateUser.error instanceof Error) {
+      return updateUser.error.message;
+    }
+    return "Failed to update user.";
+  })();
+
   return (
     <div className="p-4">
       <h1 className='text-primary font-extrabold text-4xl'>User Management</h1>
@@ -222,7 +240,12 @@ const Users = () => {
           defaultEmail={editUser.email}
           defaultPhoneNumber={editUser.phone_number}
           defaultAdminAuth={editUser.admin_auth}
-          onClose={() => setEditUser(null)}
+          submitError={updateErrorMessage}
+          isSaving={updateUser.isPending}
+          onClose={() => {
+            updateUser.reset();
+            setEditUser(null);
+          }}
           onSubmit={(values) => {
             updateUser.mutate(
               {
