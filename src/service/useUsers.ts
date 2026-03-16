@@ -41,7 +41,7 @@ export const useUpdateUser = () => {
       phone_number,
       admin_auth,
     }: {
-      id: number;
+      id: string;
       name: string;
       email: string;
       phone_number?: string;
