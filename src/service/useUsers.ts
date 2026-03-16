@@ -2,18 +2,19 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
 import type { SingleUserWithGroupsResponse, UserRelatedResponse, UserResponse } from "../types/userTypes";
 
-export function useUsers(page: number = 1, limit: number = 5,search?: string) {
- return useQuery<UserResponse>({
-  queryKey: ["users", page, limit,search],
-  queryFn: async () => {
-    const searchParam = search ? `search=${search}` : ""
-    const res = await api.get<UserResponse>(`/api/users?${searchParam}&page=${page}&limit=${limit}`);
-    return res.data;
-  },
-  staleTime: 1000 * 60,
-  keepPreviousData: true,
-  retry: false,
-} as any);
+export function useUsers(page: number = 1, limit: number = 5, search?: string, enabled = true) {
+  return useQuery<UserResponse>({
+    queryKey: ["users", page, limit, search],
+    queryFn: async () => {
+      const searchParam = search ? `search=${search}` : "";
+      const res = await api.get<UserResponse>(`/api/users?${searchParam}&page=${page}&limit=${limit}`);
+      return res.data;
+    },
+    enabled,
+    staleTime: 1000 * 60,
+    keepPreviousData: true,
+    retry: false,
+  } as any);
 }
 
 export function useSingleUser(id: string | null | undefined) {
