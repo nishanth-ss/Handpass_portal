@@ -38,20 +38,25 @@ export const useUpdateUser = () => {
       name,
       email,
       phone_number,
-      shift_id,
+      admin_auth,
     }: {
       id: number;
       name: string;
       email: string;
       phone_number?: string;
-      shift_id?: string;
+      admin_auth: number;
     }) => {
-      const payload: { name: string; email: string; phone_number?: string; shift_id?: string } = {
+      const payload: {
+        name: string;
+        email: string;
+        phone_number?: string;
+        admin_auth: number;
+      } = {
         name,
         email,
+        admin_auth,
       };
       if (phone_number) payload.phone_number = phone_number;
-      if (shift_id) payload.shift_id = shift_id;
       const { data } = await api.put(`/api/users/update-user/${id}`, payload);
       return data;
     },

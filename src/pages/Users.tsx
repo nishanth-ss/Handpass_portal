@@ -1,4 +1,3 @@
-import { TiPlus } from 'react-icons/ti';
 import { useUsers, useUpdateUser, useDeleteUser } from '../service/useUsers';
 import { CommonLoader } from '../components/common/CommonLoader';
 import { useState } from 'react';
@@ -9,6 +8,20 @@ import { EditUserDialog } from '../components/user/EditUserDialog';
 import { DeleteConfirmDialog } from '../components/common/DeleteConfirmDialog';
 import { useQueryClient } from '@tanstack/react-query';
 import UserDetailsDialog from '../components/user/UserDetailsDialog';
+import type { UserData } from '../types/userTypes';
+
+type UserRow = {
+  id: number;
+  name: string;
+  email: string;
+  phone_number: string;
+  user_id?: string;
+  create_at?: string;
+  sn?: string;
+  admin_auth: number;
+  device_name?: string;
+  shift_name?: string;
+};
 
 const Users = () => {
   const [page, setPage] = useState(0);
@@ -17,7 +30,7 @@ const Users = () => {
     name: string;
     email: string;
     phone_number?: string;
-    shift_id?: string;
+    admin_auth: number;
   } | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const deleteMutation = useDeleteUser(); // FIX HOOK HERE
@@ -33,13 +46,13 @@ const Users = () => {
   if (isLoading) return <CommonLoader />;
   if (isError) return <p>Error fetching users!</p>;
 
-  const handleEdit = (row: any) => {
+  const handleEdit = (row: UserRow) => {
     setEditUser({
       id: row.id,
       name: row.name,
       email: row.email ?? "",
       phone_number: row.phone_number ?? "",
-      shift_id: row.shift_id,
+      admin_auth: Number(row.admin_auth ?? 0),
     });
   };
 
@@ -59,6 +72,9 @@ const Users = () => {
     { field: "email", headerName: "Email", flex: 1 },
     {
       field: "phone_number", headerName: "Phone Number", flex: 1
+    },
+    {
+      field: "admin_auth", headerName: "Admin Auth", flex: 0.7
     },
     {
       field: "created_at", headerName: "Created At", flex: 1,
@@ -87,15 +103,19 @@ const Users = () => {
     },
   ];
 
-  const rows = data?.data?.map((user: any) => ({
+  const rows: UserRow[] = (data?.data || []).map((user: UserData & {
+    phone?: string;
+    device_name?: string;
+    shift_name?: string;
+  }) => ({
     id: user.id,
     name: user.name,
-    email: user.email,
+    email: user.email ?? "",
     phone_number: user.phone_number ?? user.phone ?? "",
     user_id: user.user_id,
     create_at: user.created_at,
     sn: user?.sn,
-    shift_id: user?.shift_id ? String(user.shift_id) : undefined,
+    admin_auth: Number(user?.admin_auth ?? 0),
     device_name: user?.device_name,
     shift_name: user?.shift_name
   }));
@@ -151,16 +171,16 @@ const Users = () => {
           defaultName={editUser.name}
           defaultEmail={editUser.email}
           defaultPhoneNumber={editUser.phone_number}
-          defaultShiftId={editUser.shift_id}
+          defaultAdminAuth={editUser.admin_auth}
           onClose={() => setEditUser(null)}
-          onSubmit={(values: any) => {
+          onSubmit={(values) => {
             updateUser.mutate(
               {
                 id: editUser.id,
                 name: values.name,
                 email: values.email,
                 phone_number: values.phone_number,
-                shift_id: values.shift_id,
+                admin_auth: values.admin_auth,
               },
               { onSuccess: () => setEditUser(null) }
             );
