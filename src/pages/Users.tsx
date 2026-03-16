@@ -1,20 +1,21 @@
 import { useUsers, useUpdateUser, useDeleteUser } from '../service/useUsers';
 import { CommonLoader } from '../components/common/CommonLoader';
 import { useState } from 'react';
-import { Button } from '@mui/material';
+import { Box, Button } from '@mui/material';
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import { Edit, Eye, Trash } from 'lucide-react';
 import { EditUserDialog } from '../components/user/EditUserDialog';
 import { DeleteConfirmDialog } from '../components/common/DeleteConfirmDialog';
 import { useQueryClient } from '@tanstack/react-query';
 import UserDetailsDialog from '../components/user/UserDetailsDialog';
-import type { UserData } from '../types/userTypes';
+import type { UserData, UserGroup } from '../types/userTypes';
 
 type UserRow = {
   id: number;
   name: string;
   email: string;
   phone_number: string;
+  groups: UserGroup[];
   user_id?: string;
   create_at?: string;
   sn?: string;
@@ -74,6 +75,50 @@ const Users = () => {
       field: "phone_number", headerName: "Phone Number", flex: 1
     },
     {
+      field: "groups",
+      headerName: "Groups",
+      flex: 1.3,
+      sortable: false,
+      renderCell: (params) => {
+        const groups: UserGroup[] = params.row.groups ?? [];
+
+        if (groups.length === 0) {
+          return <span className="text-gray-500 text-sm">No group assigned</span>;
+        }
+
+        return (
+          <Box
+            sx={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 0.75,
+              py: 1,
+              alignItems: "center",
+            }}
+          >
+            {groups.map((group) => (
+              <Box
+                key={group.group_id}
+                sx={{
+                  px: 1,
+                  py: 0.4,
+                  borderRadius: "999px",
+                  backgroundColor: "#eef4ff",
+                  color: "#1d4ed8",
+                  fontSize: "0.75rem",
+                  fontWeight: 600,
+                  lineHeight: 1.2,
+                  border: "1px solid #bfdbfe",
+                }}
+              >
+                {group.group_id}
+              </Box>
+            ))}
+          </Box>
+        );
+      }
+    },
+    {
       field: "admin_auth", headerName: "Admin Auth", flex: 0.7
     },
     {
@@ -112,6 +157,7 @@ const Users = () => {
     name: user.name,
     email: user.email ?? "",
     phone_number: user.phone_number ?? user.phone ?? "",
+    groups: user.groups ?? [],
     user_id: user.user_id,
     create_at: user.created_at,
     sn: user?.sn,
@@ -159,8 +205,12 @@ const Users = () => {
           loading={isFetching}
           disableRowSelectionOnClick
           disableColumnSelector
+          getRowHeight={() => "auto"}
           sx={{
             "& .MuiDataGrid-cell:focus": { outline: "none" },
+            "& .MuiDataGrid-cell": {
+              alignItems: "center",
+            },
           }}
         />
       </div>
