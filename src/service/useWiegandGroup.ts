@@ -30,29 +30,42 @@ export interface UpdateUserWiegandPayload {
   timestamp: number;
 }
 
-export function useWiegandGroups(delFlag = 0, enabled = true) {
-  return useQuery({
-    queryKey: ["wiegandGroups", delFlag],
+export function useWiegandGroups(delFlag = 0, enabled = true, page?: number, limit?: number) {
+  return useQuery<any>({
+    queryKey: ["wiegandGroups", delFlag, page ?? "all", limit ?? "all"],
     queryFn: async () => {
-      const res = await api.get(`/v1/api/wiegand_groups?del_flag=${delFlag}`);
+      const params = new URLSearchParams();
+      params.set("del_flag", String(delFlag));
+      if (typeof page === "number" && typeof limit === "number") {
+        params.set("page", String(page));
+        params.set("limit", String(limit));
+      }
+      const res = await api.get(`/v1/api/wiegand_groups?${params.toString()}`);
       return res.data;
     },
     enabled,
     staleTime: 1000 * 60,
     retry: false,
-  });
+  } as any);
 }
 
-export function useUserWiegands() {
-  return useQuery({
-    queryKey: ["userWiegands"],
+export function useUserWiegands(enabled = true, page?: number, limit?: number) {
+  return useQuery<any>({
+    queryKey: ["userWiegands", page ?? "all", limit ?? "all"],
     queryFn: async () => {
-      const res = await api.get("/v1/api/user_wiegands?del_flag=false");
+      const params = new URLSearchParams();
+      params.set("del_flag", "false");
+      if (typeof page === "number" && typeof limit === "number") {
+        params.set("page", String(page));
+        params.set("limit", String(limit));
+      }
+      const res = await api.get(`/v1/api/user_wiegands?${params.toString()}`);
       return res.data;
     },
     staleTime: 1000 * 60,
     retry: false,
-  });
+    enabled,
+  } as any);
 }
 
 export function useCreateUserWiegand() {

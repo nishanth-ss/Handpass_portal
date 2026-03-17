@@ -3,12 +3,22 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
 import type { DeviceResponse } from "../types/deviceTypes";
 
-export function useDevices(page = 1, search = "", enabled = true) {
+export function useDevices(page = 1, search = "", enabled = true, limit?: number) {
   return useQuery<DeviceResponse>({
-    queryKey: ["devices", page, search],
+    queryKey: ["devices", page, search, limit ?? "all"],
     queryFn: async (): Promise<DeviceResponse> => {
+      const params: Record<string, unknown> = {};
+      if (search) params.search = search;
+
+      // Only send pagination params when a limit is explicitly provided.
+      // Many screens use this hook for dropdowns/autocomplete and expect "all" devices.
+      if (typeof limit === "number") {
+        params.page = page;
+        params.limit = limit;
+      }
+
       const res = await api.post(`/v1/device/getAll`, undefined, {
-        params: search ? { search } : undefined,
+        params: Object.keys(params).length ? params : undefined,
       });
       return res.data;
     },

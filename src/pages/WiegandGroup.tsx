@@ -18,7 +18,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
+import { DataGrid, type GridColDef, type GridPaginationModel } from "@mui/x-data-grid";
 import { Edit, Trash } from "lucide-react";
 import { useDebounce } from "../hooks/useDebounce";
 import { useDevices } from "../service/useDevice";
@@ -141,6 +141,14 @@ function TabPanel(props: { children?: React.ReactNode; value: number; index: num
 const WiegandGroup = () => {
   const [tabValue, setTabValue] = useState(0);
   const [open, setOpen] = useState(false);
+  const [groupsPaginationModel, setGroupsPaginationModel] = useState<GridPaginationModel>({
+    page: 0,
+    pageSize: 10,
+  });
+  const [assignPaginationModel, setAssignPaginationModel] = useState<GridPaginationModel>({
+    page: 0,
+    pageSize: 10,
+  });
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedId, setSelectedId] = useState("");
   const [snSearchText, setSnSearchText] = useState("");
@@ -170,8 +178,13 @@ const WiegandGroup = () => {
     isLoading: isUserWiegandsLoading,
     isFetching: isUserWiegandsFetching,
     isError: isUserWiegandsError,
-  } = useUserWiegands();
-  const { data, isLoading, isFetching, isError } = useWiegandGroups(0);
+  } = useUserWiegands(true, assignPaginationModel.page + 1, assignPaginationModel.pageSize);
+  const { data, isLoading, isFetching, isError } = useWiegandGroups(
+    0,
+    true,
+    groupsPaginationModel.page + 1,
+    groupsPaginationModel.pageSize
+  );
   const { data: devicesData, isLoading: isDevicesLoading } = useDevices(1, debouncedSnSearchQuery);
   const { data: assignDevicesData, isLoading: isAssignDevicesLoading } = useDevices(1, debouncedAssignSnSearchQuery);
   const { data: usersData, isLoading: isUsersLoading } = useUsers(1, 100, debouncedAssignUserSearchText);
@@ -213,6 +226,9 @@ const WiegandGroup = () => {
       : Array.isArray(data?.items)
         ? data.items
         : [];
+
+  const groupsRowCount =
+    Number((data as any)?.pagination?.total ?? (data as any)?.totalCount ?? (data as any)?.total ?? list.length) || 0;
 
   const handleEditRow = (row: any) => {
     setError("");
@@ -299,6 +315,14 @@ const WiegandGroup = () => {
       : Array.isArray(userWiegandsData?.items)
         ? userWiegandsData.items
         : [];
+
+  const assignRowCount =
+    Number(
+      (userWiegandsData as any)?.pagination?.total ??
+        (userWiegandsData as any)?.totalCount ??
+        (userWiegandsData as any)?.total ??
+        assignList.length
+    ) || 0;
 
   function handleEditAssignRow(row: any) {
     setAssignError("");
@@ -573,6 +597,12 @@ const WiegandGroup = () => {
             rows={rows}
             columns={columns}
             loading={isLoading || isFetching}
+            pagination
+            paginationMode="server"
+            rowCount={groupsRowCount}
+            pageSizeOptions={[5, 10, 20, 50]}
+            paginationModel={groupsPaginationModel}
+            onPaginationModelChange={setGroupsPaginationModel}
             disableRowSelectionOnClick
             disableColumnSelector
             sx={{
@@ -756,6 +786,12 @@ const WiegandGroup = () => {
             rows={assignRows}
             columns={assignColumns}
             loading={isUserWiegandsLoading || isUserWiegandsFetching}
+            pagination
+            paginationMode="server"
+            rowCount={assignRowCount}
+            pageSizeOptions={[5, 10, 20, 50]}
+            paginationModel={assignPaginationModel}
+            onPaginationModelChange={setAssignPaginationModel}
             disableRowSelectionOnClick
             disableColumnSelector
             sx={{
