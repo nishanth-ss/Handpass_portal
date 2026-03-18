@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
 import type { SingleUserWithGroupsResponse, UserRelatedResponse, UserResponse } from "../types/userTypes";
 
@@ -15,7 +15,7 @@ export function useUsers(page: number = 1, limit: number = 5, search?: string, e
     },
     enabled,
     staleTime: 1000 * 60,
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
     retry: false,
   } as any);
 }

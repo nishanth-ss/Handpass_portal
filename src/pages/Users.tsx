@@ -1,14 +1,15 @@
 import { useUsers, useUpdateUser, useDeleteUser } from '../service/useUsers';
 import { CommonLoader } from '../components/common/CommonLoader';
-import { useState } from 'react';
-import { Box, Button } from '@mui/material';
+import { useEffect, useRef, useState } from 'react';
+import { Box, Button, InputAdornment, TextField } from '@mui/material';
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import { Edit, Eye, Trash } from 'lucide-react';
+import { Edit, Eye, Search, Trash } from 'lucide-react';
 import { EditUserDialog } from '../components/user/EditUserDialog';
 import { DeleteConfirmDialog } from '../components/common/DeleteConfirmDialog';
 import { useQueryClient } from '@tanstack/react-query';
 import UserDetailsDialog from '../components/user/UserDetailsDialog';
 import type { UserData, UserGroup } from '../types/userTypes';
+import { useDebounce } from '../hooks/useDebounce';
 
 type UserRow = {
   id: string;
@@ -26,6 +27,9 @@ type UserRow = {
 
 const Users = () => {
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
+  const [searchText, setSearchText] = useState("");
+  const debouncedSearch = useDebounce(searchText.trim(), 400);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
   const [editUser, setEditUser] = useState<{
     id: string;
     name: string;
@@ -42,11 +46,26 @@ const Users = () => {
 
   const { data, isLoading, isError, isFetching } = useUsers(
     paginationModel.page + 1,
-    paginationModel.pageSize
+    paginationModel.pageSize,
+    debouncedSearch
   );
   const updateUser = useUpdateUser();
 
-  if (isLoading) return <CommonLoader />;
+  useEffect(() => {
+    setPaginationModel((prev) => ({ ...prev, page: 0 }));
+  }, [debouncedSearch]);
+
+  useEffect(() => {
+    if (!searchText) return;
+    const input = searchInputRef.current;
+    if (!input) return;
+
+    input.focus();
+    const cursorPosition = input.value.length;
+    input.setSelectionRange(cursorPosition, cursorPosition);
+  }, [debouncedSearch, searchText]);
+
+  if (isLoading && !data) return <CommonLoader />;
   if (isError) return <p>Error fetching users!</p>;
 
   const handleEdit = (row: UserRow) => {
@@ -191,13 +210,28 @@ const Users = () => {
 
   return (
     <div className="p-4">
-      <h1 className='text-primary font-extrabold text-4xl'>User Management</h1>
+      <div className="sticky top-0 z-20 -mx-4 mb-4 border-b border-slate-200 bg-white/95 px-4 pb-4 pt-2 backdrop-blur-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h1 className='text-primary font-extrabold text-4xl'>User Management</h1>
 
-      <div className='flex items-center justify-between mb-4'>
-        {/* <p>Manage physical access terminals and cameras.</p> */}
-        {/* <Button variant="contained" className='bg-primary!' startIcon={<TiPlus />}>
-          Add New User
-        </Button> */}
+          <TextField
+            size="small"
+            className="w-full sm:w-[320px]"
+            placeholder="Search users..."
+            value={searchText}
+            inputRef={searchInputRef}
+            onChange={(e) => setSearchText(e.target.value)}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search size={16} />
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
+        </div>
       </div>
 
       <div className="w-full overflow-x-auto">
