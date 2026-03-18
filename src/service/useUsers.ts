@@ -6,8 +6,11 @@ export function useUsers(page: number = 1, limit: number = 5, search?: string, e
   return useQuery<UserResponse>({
     queryKey: ["users", page, limit, search],
     queryFn: async () => {
-      const searchParam = search ? `search=${search}` : "";
-      const res = await api.get<UserResponse>(`/api/users?${searchParam}&page=${page}&limit=${limit}`);
+      const params = new URLSearchParams();
+      if (search) params.set("search", search);
+      params.set("page", String(page));
+      params.set("limit", String(limit));
+      const res = await api.get<UserResponse>(`/api/users?${params.toString()}`);
       return res.data;
     },
     enabled,

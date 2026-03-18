@@ -39,19 +39,27 @@ export type AccessListPayload = {
   sortOrder?: "asc" | "desc";
   id?: string;
   user_id?: string;
+  sn?: string | null;
+  name?: string | null;
   format?: string;
   start_date?: unknown;
   end_date?: unknown;
 };
 
-export function useAccessListQuery(payload: AccessListPayload, enabled: boolean) {
-  return useQuery({
+export function useAccessListQuery<TData = any>(
+  payload: AccessListPayload,
+  enabled: boolean,
+  refetchInterval: number | false = 60000
+) {
+  return useQuery<TData>({
     queryKey: ["access-list", payload],
     queryFn: async () => {
-      const res = await api.post(`/api/report/access-list`, payload);
+      const res = await api.post<TData>(`/api/report/access-list`, payload);
       return res.data;
     },
     enabled,
+    refetchInterval,
+    refetchOnWindowFocus: false,
     retry: false,
   });
 }

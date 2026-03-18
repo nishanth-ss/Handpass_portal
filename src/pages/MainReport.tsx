@@ -230,7 +230,7 @@ const reportTabs: Array<{ key: ReportType; label: string; hasSearch: boolean }> 
   { key: "device_report", label: "Device Report", hasSearch: true },
   { key: "group_report", label: "Group Report", hasSearch: true },
   { key: "user_wiegand_report", label: "User Remote/Time Report", hasSearch: true },
-  { key: "access_log_report", label: "Access Log Report", hasSearch: false },
+  { key: "access_log_report", label: "Access Log Report", hasSearch: true },
 ];
 
 const MainReport = () => {
@@ -252,7 +252,9 @@ const MainReport = () => {
   const downloadMutation = useAccessListMutation();
 
   const shouldFetchUsers =
-    (reportType === "user_report" || reportType === "user_wiegand_report") &&
+    (reportType === "user_report" ||
+      reportType === "user_wiegand_report" ||
+      reportType === "access_log_report") &&
     debouncedSearchQuery.trim().length > 0;
   const shouldFetchDevices = reportType === "device_report" && debouncedSearchQuery.trim().length > 0;
   const shouldFetchGroups = reportType === "group_report" && debouncedSearchQuery.trim().length > 0;
@@ -705,6 +707,8 @@ const MainReport = () => {
       return;
     }
 
+    const accessLogSearch = searchQuery.trim();
+
     const payload = {
       report_type: reportType,
       page: 1,
@@ -723,6 +727,12 @@ const MainReport = () => {
       user_id:
         reportType === "user_report" || reportType === "user_wiegand_report"
           ? selectedUser?.user_id ?? undefined
+          : reportType === "access_log_report"
+            ? selectedUser?.user_id ?? (accessLogSearch ? accessLogSearch : undefined)
+          : undefined,
+      name:
+        reportType === "access_log_report"
+          ? selectedUser?.name ?? (accessLogSearch ? accessLogSearch : undefined)
           : undefined,
     };
 
@@ -947,9 +957,26 @@ const MainReport = () => {
             )}
 
             {reportType === "access_log_report" && (
-              <Typography variant="body2" className="text-gray-600!">
-                Access Log Report has no search.
-              </Typography>
+              <SearchSuggest<UserData>
+                label="Search User (Access Log)"
+                value={searchText}
+                onChange={(v) => {
+                  setSearchText(v);
+                  setSearchQuery(v);
+                  setSelectedUser(null);
+                }}
+                items={usersData?.data ?? []}
+                loading={isUsersFetching}
+                getKey={(u) => u.id}
+                getPrimary={(u) => u.name}
+                getSecondary={(u) => u.user_id}
+                onSelect={(u) => {
+                  setSelectedUser(u);
+                  setSearchText(`${u.name}`);
+                  setSearchQuery("");
+                }}
+                emptyText="No users"
+              />
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

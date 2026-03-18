@@ -25,7 +25,7 @@ type UserRow = {
 };
 
 const Users = () => {
-  const [page, setPage] = useState(0);
+  const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
   const [editUser, setEditUser] = useState<{
     id: string;
     name: string;
@@ -40,8 +40,10 @@ const Users = () => {
   const [open, setOpen] = useState(false);
 
 
-  const limit = 10;
-  const { data, isLoading, isError, isFetching } = useUsers(page + 1, limit);
+  const { data, isLoading, isError, isFetching } = useUsers(
+    paginationModel.page + 1,
+    paginationModel.pageSize
+  );
   const updateUser = useUpdateUser();
 
   if (isLoading) return <CommonLoader />;
@@ -206,8 +208,13 @@ const Users = () => {
             pagination
             paginationMode="server"
             rowCount={data?.pagination.total || 0}
-            paginationModel={{ page, pageSize: limit }}
-            onPaginationModelChange={(model) => setPage(model.page)}
+            pageSizeOptions={[5, 10, 20, 50]}
+            paginationModel={paginationModel}
+            onPaginationModelChange={(model) =>
+              setPaginationModel((prev) =>
+                model.pageSize !== prev.pageSize ? { page: 0, pageSize: model.pageSize } : model
+              )
+            }
             loading={isFetching}
             disableRowSelectionOnClick
             disableColumnSelector
