@@ -4,7 +4,6 @@ import { CheckCircle2, XCircle } from "lucide-react";
 import {
   HeaderBar,
   CalendarGrid,
-  ShiftSettingsPanel,
   Drawer,
   DayDetailsDrawerContent,
   StatCard,
@@ -184,14 +183,7 @@ export default function AttendanceModule() {
     return payload;
   }, [selectedUserId, currentMonth]);
 
-  const { data: attendanceData, refetch: refetchAttendance } = useUserAttendance(attendancePayload);
-
-  // Refetch attendance data when user selection changes
-  useEffect(() => {
-    if (selectedUserId && selectedUserId !== "ALL") {
-      refetchAttendance();
-    }
-  }, [selectedUserId, refetchAttendance]);
+  const { data: attendanceData } = useUserAttendance(attendancePayload);
 
   // Process API data into our existing format
   const processedAttendanceData = useMemo(() => {
@@ -385,7 +377,7 @@ export default function AttendanceModule() {
             userId: selectedUserId,
             userName: "User",
             status: calendarDay.status,
-            inTime: calendarDay.inTime,
+            inTime: calendarDay.inTime ?? undefined,
             note: calendarDay.status,
           });
         }
@@ -502,7 +494,7 @@ export default function AttendanceModule() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100">
+    <div className="min-h-screen bg-linear-to-br from-indigo-100 via-purple-50 to-pink-100">
       <div className="mx-auto py-6 px-4">
 
         {/* Stats Cards */}
@@ -512,7 +504,7 @@ export default function AttendanceModule() {
               title="Present (incl. Late)"
               value={monthStats.present}
               subtitle={`For ${format(currentMonth, "MMMM yyyy")}`}
-              icon={<div className="h-5 w-5 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center">
+              icon={<div className="h-5 w-5 rounded-full bg-linear-to-br from-emerald-400 to-teal-500 flex items-center justify-center">
                 <CheckCircle2 className="h-3 w-3 text-white" />
               </div>}
               accent="from-emerald-500 to-teal-600"
@@ -533,7 +525,7 @@ export default function AttendanceModule() {
                   ? `Working days: ${monthStats.workingDays} • Users: ${users.length}`
                   : `Working days counted: ${monthStats.workingDays}`
               }
-              icon={<div className="h-5 w-5 rounded-full bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center">
+              icon={<div className="h-5 w-5 rounded-full bg-linear-to-br from-rose-400 to-pink-500 flex items-center justify-center">
                 <XCircle className="h-3 w-3 text-white" />
               </div>}
               accent="from-rose-500 to-pink-600"
@@ -628,7 +620,7 @@ export default function AttendanceModule() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
               <div className="rounded-lg border p-4 bg-slate-50">
                 <div className="flex items-center justify-between mb-3">
-                  <Typography variant="subtitle1" className="!font-semibold">
+                  <Typography variant="subtitle1" className="font-semibold!">
                     Shift List
                   </Typography>
                   <Button
@@ -669,10 +661,10 @@ export default function AttendanceModule() {
                             applyShiftToMainState(shift);
                           }}
                         >
-                          <Typography variant="body2" className="!font-semibold">
+                          <Typography variant="body2" className="font-semibold!">
                             {shift.shift_name}
                           </Typography>
-                          <Typography variant="caption" className="!text-slate-600">
+                          <Typography variant="caption" className="text-slate-600!">
                             {shift.start_time} - {shift.end_time} | Grace {shift.grace_minutes}m | Off: {((shift.weekly_off_days || []) as number[])
                               .map((day) => weekDays[day] ?? day)
                               .join(", ")}
@@ -685,7 +677,7 @@ export default function AttendanceModule() {
               </div>
 
               <div className="rounded-lg border p-4">
-                <Typography variant="subtitle1" className="!font-semibold !mb-3">
+                <Typography variant="subtitle1" className="font-semibold! mb-3!">
                   Shift Form (Create/Update)
                 </Typography>
                 <div className="grid grid-cols-1 gap-3">
@@ -715,7 +707,7 @@ export default function AttendanceModule() {
                     fullWidth
                   />
                   <div>
-                    <Typography variant="body2" className="!mb-1 !font-medium">
+                    <Typography variant="body2" className="mb-1! font-medium!">
                       Weekly Off Days
                     </Typography>
                     <FormGroup row>

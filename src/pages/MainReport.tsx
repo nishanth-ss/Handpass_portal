@@ -438,6 +438,7 @@ const MainReport = () => {
 
     return { header, sep, body, note: keys.length > cols.length ? `Showing ${cols.length}/${keys.length} columns` : null };
   };
+  void toPdfTableLines;
 
   const buildTablePdf = ({
     title,
@@ -707,7 +708,7 @@ const MainReport = () => {
     const payload = {
       report_type: reportType,
       page: 1,
-      limit: 10,
+      limit: "all" as const,
       sortField: "created_at",
       sortOrder: "desc" as const,
       format: downloadFormat,

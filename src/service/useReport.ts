@@ -34,7 +34,7 @@ export function useReportsPolling(payload?: ReportPayload) {
 export type AccessListPayload = {
   report_type?: string;
   page?: number;
-  limit?: number;
+  limit?: number | "all";
   sortField?: string;
   sortOrder?: "asc" | "desc";
   id?: string;

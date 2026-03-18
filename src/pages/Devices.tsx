@@ -181,7 +181,7 @@ const Devices = () => {
         </div>
       ) : (
         <div className="w-full overflow-x-auto mt-4">
-          <div className="min-w-[1100px]" style={{ height: 650 }}>
+          <div className="min-w-275" style={{ height: 650 }}>
             <DataGrid
               rows={rows}
               columns={columns}

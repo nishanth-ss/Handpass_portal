@@ -136,11 +136,6 @@ export function useDeleteUserWithGroup() {
   });
 }
 
-interface CreateGroupPayload {
-  group_name: string;
-  description?: string;
-}
-
 export function useCreateGroup() {
   const queryClient = useQueryClient();
 

@@ -1,10 +1,10 @@
 // services/useDevices.ts
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
 import type { DeviceResponse } from "../types/deviceTypes";
 
-export function useDevices(page = 1, search = "", enabled = true, limit?: number) {
-  return useQuery<DeviceResponse>({
+export function getDevicesQueryOptions(page = 1, search = "", limit?: number) {
+  return {
     queryKey: ["devices", page, search, limit ?? "all"],
     queryFn: async (): Promise<DeviceResponse> => {
       const params: Record<string, unknown> = {};
@@ -22,9 +22,16 @@ export function useDevices(page = 1, search = "", enabled = true, limit?: number
       });
       return res.data;
     },
-    enabled,
-    staleTime: 1000 * 60,
+    staleTime: 1000 * 60 * 5,
+    placeholderData: keepPreviousData,
     retry: false,
+  };
+}
+
+export function useDevices(page = 1, search = "", enabled = true, limit?: number) {
+  return useQuery<DeviceResponse>({
+    ...getDevicesQueryOptions(page, search, limit),
+    enabled,
   });
 }
 

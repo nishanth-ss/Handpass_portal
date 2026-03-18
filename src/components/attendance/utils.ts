@@ -172,7 +172,7 @@ export function calculateDayAggregates(args: {
           userId: u.id,
           userName: u.name,
           status: computed.status,
-          inTime: punch?.inTime,
+          inTime: punch?.inTime ?? undefined,
           note: computed.label,
         });
       }

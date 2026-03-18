@@ -13,7 +13,6 @@ const GroupManagementTable = () => {
     const {
         register: registerGroup,
         handleSubmit: handleSubmitGroup,
-        reset: resetGroup,
         control: controlGroup,
         formState: { errors: groupErrors }
     } = useForm({
@@ -27,7 +26,7 @@ const GroupManagementTable = () => {
 
     // add group
     const [groupDialog, setGroupDialog] = useState(false);
-    const [editingGroup, setEditingGroup] = useState<Group | null>(null);
+    const [editingGroup] = useState<Group | null>(null);
     const { data: devices } = useDevices();
     const createGroup = useCreateGroup();
 
@@ -36,7 +35,6 @@ const GroupManagementTable = () => {
 
     // Dialog state
     const [dialogOpen, setDialogOpen] = useState(false);
-    const [selectedGroupName, setSelectedGroupName] = useState("");
     const [selectGroupID, setSelectedGroupID] = useState("");
 
     // Fetch groups with pagination
@@ -94,21 +92,8 @@ const GroupManagementTable = () => {
     ];
 
     const handleViewClick = (group: Group) => {
-        setSelectedGroupName(group.group_name);
         setSelectedGroupID(group.id)
         setDialogOpen(true);
-    };
-
-    // add group
-    const openAddGroup = () => {
-        resetGroup({
-            group_name: "",
-            description: "",
-            device_id: "",
-            is_active: true
-        });
-        setEditingGroup(null);
-        setGroupDialog(true);
     };
 
     const saveGroup = (formData: any) => {
@@ -151,7 +136,6 @@ const GroupManagementTable = () => {
                 <GroupDevicesDialog
                     open={dialogOpen}
                     onClose={() => setDialogOpen(false)}
-                    groupName={selectedGroupName}
                     groupID={selectGroupID}
                 />
 

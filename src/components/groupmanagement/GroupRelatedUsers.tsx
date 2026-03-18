@@ -149,7 +149,7 @@ const GroupRelatedUsers = () => {
                         options={filteredOptions}
                         value={selectedGroups}
                         getOptionLabel={(option: any) => option.label}
-                        onChange={(event, newValue) => setSelectedGroups(newValue)}
+                        onChange={(_, newValue) => setSelectedGroups(newValue)}
                         renderOption={(props, option, { selected }) => (
                             <li {...props}>
                                 <Checkbox checked={selected} style={{ marginRight: 8 }} />

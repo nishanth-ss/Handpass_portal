@@ -1,4 +1,3 @@
-import React from 'react';
 import { useForm } from "react-hook-form";
 import { Box, Container, Typography, TextField, Button, Paper, Alert, CircularProgress } from "@mui/material";
 import { useFirmwareCheck } from "../service/useFirmware";

@@ -5,7 +5,7 @@ import { AuthProvider } from "./auth/AuthProvider";
 import { useApiInterceptor } from "./lib/apiAuthHandling";
 import { LayoutContainer } from "./components/Layout";
 import { Sidebar } from "./components/Sidebar";
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { CommonLoader } from "./components/common/CommonLoader";
 
 // MUI date localization
@@ -29,9 +29,18 @@ const WiegandGroup = lazy(()=> import("./pages/WiegandGroup"));
 const FirmwareCheck = lazy(() => import("./pages/FirmwareCheck"));
 const LoginForm = lazy(() => import("./pages/Login"));
 const AttenenceModule = lazy(() => import("./pages/AttendanceModule"));
-const Settings = lazy(() => import("./pages/Settings"));
 
 function App() {
+  useEffect(() => {
+    const warmRoutes = window.setTimeout(() => {
+      void import("./pages/Devices");
+      void import("./pages/Users");
+      void import("./pages/AttendanceModule");
+    }, 300);
+
+    return () => window.clearTimeout(warmRoutes);
+  }, []);
+
   return (
     <BrowserRouter>
       <AuthProvider>

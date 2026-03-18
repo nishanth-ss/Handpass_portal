@@ -1,9 +1,11 @@
-import { LayoutDashboard, Users, Network, Clock, FileText, Settings } from "lucide-react";
+import { LayoutDashboard, Users, Clock, FileText, Settings } from "lucide-react";
 import { MonitorSmartphone } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { LogOut } from "lucide-react";
 import logo from "../assets/AGS_logo.png"
 import { useAuth } from "../auth/AuthProvider";
+import { useQueryClient } from "@tanstack/react-query";
+import { getDevicesQueryOptions } from "../service/useDevice";
 
 export const NAV_ITEMS = [
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -20,10 +22,16 @@ export function Sidebar() {
     const location = useLocation();
     const navigate = useNavigate();
     const {logout} = useAuth();
+    const queryClient = useQueryClient();
 
     const handleLogout = async () => {
        await logout();
         navigate("/login");
+    };
+
+    const prefetchDevicesPage = () => {
+        void import("../pages/Devices");
+        queryClient.prefetchQuery(getDevicesQueryOptions());
     };
 
     return (
@@ -39,10 +47,12 @@ export function Sidebar() {
                         <Link
                             key={href}
                             to={href}
+                            onMouseEnter={href === "/devices" ? prefetchDevicesPage : undefined}
+                            onFocus={href === "/devices" ? prefetchDevicesPage : undefined}
                             className={`group flex items-center gap-3 p-2 rounded-md transition
         ${active
                                     ? "bg-secondary text-primary font-semibold"
-                                    : "text-white hover:bg-gray-200 hover:text-primary"
+                                : "text-white hover:bg-gray-200 hover:text-primary"
                                 }`}
                         >
                             <Icon

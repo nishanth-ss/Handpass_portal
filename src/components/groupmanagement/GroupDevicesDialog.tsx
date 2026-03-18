@@ -8,14 +8,12 @@ import type { ViewGroupItem } from "../../types/groupManagement";
 interface GroupDevicesDialogProps {
     open: boolean;
     onClose: () => void;
-    groupName: string;
     groupID: string;
 }
 
 const GroupDevicesDialog: React.FC<GroupDevicesDialogProps> = ({
     open,
     onClose,
-    groupName,
     groupID
 }) => {
     const columns: GridColDef[] = [
