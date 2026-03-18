@@ -1,6 +1,11 @@
-import { QueryClient, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
-import type { AttendanceResponse, ShiftConfig } from "../types/settingTypes";
+import type {
+  AttendanceApiResponse,
+  AttendancePayload,
+  AttendanceResponse,
+  ShiftConfig,
+} from "../types/settingTypes";
 
 export function useAttenence(page: number = 1, limit: number = 5) {
  return useQuery<AttendanceResponse>({
@@ -30,11 +35,11 @@ export const createAttendance = ()=>{
   });
 }
 
-export const useUserAttendance = (payload: any) => {
-  return useQuery({
+export const useUserAttendance = (payload: AttendancePayload | null) => {
+  return useQuery<AttendanceApiResponse>({
     queryKey: ["attendance", payload],
     queryFn: async () => {
-      const { data } = await api.post("/api/attendance", payload);
+      const { data } = await api.post<AttendanceApiResponse>("/api/attendance", payload);
       return data;
     },
     enabled: !!payload, // only runs when payload exists

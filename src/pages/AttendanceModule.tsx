@@ -17,11 +17,80 @@ import {
   getHolidayForDate,
   type InPunch,
   type Holiday,
+  type Status,
+  type DayAgg,
 } from "../components/attendance";
 import { useCreateShift, useShift, useUpdateShift, useUserAttendance } from "../service/useSettings";
 import { useFetchUserWithGroup } from "../service/useUsers";
 import { Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, FormGroup, TextField, Typography } from "@mui/material";
-import type { ShiftConfig } from "../types/settingTypes";
+import type {
+  MonthlySummaryAttendanceRow,
+  ShiftConfig,
+  SingleUserAttendanceRow,
+} from "../types/settingTypes";
+
+type NormalizedCalendarDay = {
+  date: string;
+  status: Status;
+  inTime: string | null;
+};
+
+const DEFAULT_ATTENDANCE_STATE = {
+  presentCount: 0,
+  absentCount: 0,
+  workingDays: 0,
+  attendanceRate: "0.00",
+  calendar: [] as NormalizedCalendarDay[],
+  calendarStatusByDate: new Map<string, { status: Status; label: string }>(),
+  punchesByDate: new Map<string, InPunch>(),
+  holidaysByDate: new Map<string, Holiday>(),
+  summaryAggByDate: new Map<string, DayAgg>(),
+};
+
+function normalizeAttendanceDate(value: string) {
+  return format(new Date(value), "yyyy-MM-dd");
+}
+
+function normalizeAttendanceStatus(status: string | null | undefined): Status {
+  switch ((status ?? "").toUpperCase()) {
+    case "PRESENT":
+      return "PRESENT";
+    case "LATE":
+      return "LATE";
+    case "WEEK_OFF":
+    case "WEEKOFF":
+      return "WEEK_OFF";
+    case "HOLIDAY":
+      return "HOLIDAY";
+    case "UPCOMING":
+      return "UPCOMING";
+    default:
+      return "ABSENT";
+  }
+}
+
+function getStatusLabel(status: Status) {
+  switch (status) {
+    case "PRESENT":
+      return "On time";
+    case "LATE":
+      return "Late";
+    case "WEEK_OFF":
+      return "Week Off";
+    case "HOLIDAY":
+      return "Holiday";
+    case "UPCOMING":
+      return "";
+    default:
+      return "No IN";
+  }
+}
+
+function toDisplayTime(value: string | null | undefined) {
+  if (!value) return null;
+  const match = value.match(/(\d{2}):(\d{2})/);
+  return match ? `${match[1]}:${match[2]}` : value;
+}
 
 export default function AttendanceModule() {
   // Fetch real users from API
@@ -102,11 +171,17 @@ export default function AttendanceModule() {
   // API call for attendance data - only when we have a valid user ID
   const attendancePayload = useMemo(() => {
     if (!selectedUserId) return null;
-    return {
-      user_id: selectedUserId,
+    const payload = {
       month: currentMonth.getMonth() + 1, // API expects 1-12
       year: currentMonth.getFullYear(),
     };
+    if (selectedUserId !== ALL_USERS) {
+      return {
+        ...payload,
+        user_id: selectedUserId,
+      };
+    }
+    return payload;
   }, [selectedUserId, currentMonth]);
 
   const { data: attendanceData, refetch: refetchAttendance } = useUserAttendance(attendancePayload);
@@ -120,41 +195,98 @@ export default function AttendanceModule() {
 
   // Process API data into our existing format
   const processedAttendanceData = useMemo(() => {
-    if (!attendanceData?.data) {
-      return {
-        presentCount: 0,
-        absentCount: 0,
-        workingDays: 0,
-        attendanceRate: "0.00",
-        calendar: [],
-        punchesByDate: new Map<string, InPunch>(),
-        holidaysByDate: new Map<string, Holiday>(),
-      };
+    if (!attendanceData?.data?.length) {
+      return DEFAULT_ATTENDANCE_STATE;
     }
 
-    const { presentCount, absentCount, workingDays, attendanceRate, calendar } = attendanceData.data;
-
-    // Convert calendar data to punches format
     const punchesByDate = new Map<string, InPunch>();
-    calendar?.forEach((day: any) => {
-      // Include both present days (with inTime) and absent days
-      if (day.inTime || day.status === 'ABSENT') {
-        punchesByDate.set(day.date, {
-          userId: selectedUserId,
-          date: day.date,
-          inTime: day.inTime,
-        });
-      }
-    });
-
-    console.log("punchesByDate", punchesByDate);
-
-
-    // Convert to holidays map (empty for now, can be added later)
     const holidaysByDate = new Map<string, Holiday>();
-    // MOCK_HOLIDAYS.forEach((holiday) => {
-    //   holidaysByDate.set(holiday.date, holiday);
-    // });
+    const calendarStatusByDate = new Map<string, { status: Status; label: string }>();
+    const summaryAggByDate = new Map<string, DayAgg>();
+    const calendar: NormalizedCalendarDay[] = [];
+
+    let presentCount = 0;
+    let absentCount = 0;
+    let workingDays = 0;
+
+    if (attendanceData.type === "monthly_summary") {
+      (attendanceData.data as MonthlySummaryAttendanceRow[]).forEach((row) => {
+        const date = normalizeAttendanceDate(row.attendance_date);
+        const present = Number(row.present ?? 0);
+        const late = Number(row.late ?? 0);
+        const halfDay = Number(row.half_day ?? 0);
+        const absent = Number(row.absent ?? 0);
+        const weekOff = Number(row.week_off ?? 0);
+        const effectivePresent = present + late + halfDay;
+
+        let status: Status = "ABSENT";
+        if (weekOff > 0) status = "WEEK_OFF";
+        else if (late > 0) status = "LATE";
+        else if (effectivePresent > 0) status = "PRESENT";
+        else if (absent === 0) status = "UPCOMING";
+
+        calendar.push({
+          date,
+          status,
+          inTime: null,
+        });
+
+        calendarStatusByDate.set(date, {
+          status,
+          label: getStatusLabel(status),
+        });
+
+        summaryAggByDate.set(date, {
+          present: effectivePresent,
+          absent,
+          late,
+          holiday: null,
+          weekOff: weekOff > 0,
+          upcoming: status === "UPCOMING",
+          details: [],
+        });
+
+        presentCount += effectivePresent;
+        absentCount += absent;
+        if (weekOff === 0 && status !== "UPCOMING") {
+          workingDays += 1;
+        }
+      });
+    } else {
+      (attendanceData.data as SingleUserAttendanceRow[]).forEach((row) => {
+        const date = normalizeAttendanceDate(row.attendance_date);
+        const status = normalizeAttendanceStatus(row.status);
+        const inTime = toDisplayTime(row.check_in);
+
+        calendar.push({
+          date,
+          status,
+          inTime,
+        });
+
+        calendarStatusByDate.set(date, {
+          status,
+          label: getStatusLabel(status),
+        });
+
+        if (inTime) {
+          punchesByDate.set(date, {
+            userId: selectedUserId,
+            date,
+            inTime,
+          });
+        }
+
+        if (status === "PRESENT" || status === "LATE") presentCount += 1;
+        if (status === "ABSENT") absentCount += 1;
+        if (status !== "WEEK_OFF" && status !== "HOLIDAY" && status !== "UPCOMING") {
+          workingDays += 1;
+        }
+      });
+    }
+
+    const attendanceRate =
+      workingDays > 0 ? ((presentCount / workingDays) * 100).toFixed(2) : "0.00";
 
     return {
       presentCount,
@@ -162,8 +294,10 @@ export default function AttendanceModule() {
       workingDays,
       attendanceRate,
       calendar,
+      calendarStatusByDate,
       punchesByDate,
       holidaysByDate,
+      summaryAggByDate,
     };
   }, [attendanceData, selectedUserId]);
 
@@ -194,52 +328,62 @@ export default function AttendanceModule() {
 
   // ALL users aggregates for each day on grid (for calendar + drawer)
   const dayAggByDate = useMemo(() => {
-    const m = new Map<string, any>();
+    const m = new Map<string, DayAgg>();
 
     for (const dateObj of days) {
       const key = format(dateObj, "yyyy-MM-dd");
       const holiday = getHolidayForDate(holidaysByDate, key);
       const weekOff = isWeekOff(dateObj, weekOffDays);
       const upcoming = isAfter(dateObj, today);
+      const apiSummary = processedAttendanceData.summaryAggByDate.get(key);
 
-      const agg = {
+      const agg: DayAgg = {
         present: 0,
         absent: 0,
         late: 0,
         holiday,
         weekOff,
         upcoming,
-        details: [] as any[],
+        details: [],
       };
+
+      if (selectedUserId === ALL_USERS && apiSummary) {
+        m.set(key, {
+          ...agg,
+          present: apiSummary.present,
+          absent: apiSummary.absent,
+          late: apiSummary.late,
+          weekOff: apiSummary.weekOff,
+          upcoming: apiSummary.upcoming,
+          details: apiSummary.details,
+        });
+        continue;
+      }
 
       // For single user mode, use the API calendar data
       if (selectedUserId !== ALL_USERS) {
         const calendarDay = processedAttendanceData.calendar?.find(
-          (day: any) => day.date === key
+          (day) => day.date === key
         );
 
         if (calendarDay && !holiday && !upcoming) {
-          // Use backend status, but don't override with weekOff logic
           if (calendarDay.status === "PRESENT") {
             agg.present = 1;
-            agg.weekOff = false; // Override calculated weekOff
+            agg.weekOff = false;
           } else if (calendarDay.status === "LATE") {
             agg.present = 1;
             agg.late = 1;
-            agg.weekOff = false; // Override calculated weekOff
+            agg.weekOff = false;
           } else if (calendarDay.status === "ABSENT") {
             agg.absent = 1;
-            agg.weekOff = false; // Override calculated weekOff
+            agg.weekOff = false;
           } else if (calendarDay.status === "WEEK_OFF") {
-            // Keep weekOff flag if backend says it's week off
             agg.weekOff = true;
           }
 
           agg.details.push({
             userId: selectedUserId,
-            userName: attendanceData?.data?.calendar?.find((day: any) =>
-              day.date === key && day.status !== "WEEK_OFF" && day.status !== "HOLIDAY"
-            )?.inTime ? "Present" : "User",
+            userName: "User",
             status: calendarDay.status,
             inTime: calendarDay.inTime,
             note: calendarDay.status,
@@ -315,7 +459,7 @@ export default function AttendanceModule() {
   const selectedHoliday = selectedKey ? getHolidayForDate(holidaysByDate, selectedKey) : null;
   const selectedPunch = selectedKey && selectedUserId !== ALL_USERS ? punchesByDate.get(selectedKey) ?? null : null;
   const selectedComputed = selectedDate && selectedUserId !== ALL_USERS
-    ? computeStatus({
+    ? processedAttendanceData.calendarStatusByDate.get(format(selectedDate, "yyyy-MM-dd")) ?? computeStatus({
       date: selectedDate,
       today,
       shiftStart,
@@ -403,9 +547,9 @@ export default function AttendanceModule() {
         </div>
 
         <div className="mb-4">
-          <Button className="!bg-primary !text-white" onClick={() => setIsShiftDialogOpen(true)}>
+          {/* <Button className="!bg-primary !text-white" onClick={() => setIsShiftDialogOpen(true)}>
             View Shift
-          </Button>
+          </Button> */}
         </div>
 
         {/* Header */}
@@ -438,6 +582,7 @@ export default function AttendanceModule() {
             holidaysByDate={holidaysByDate}
             selectedUserId={selectedUserId}
             punchesByDate={punchesByDate}
+            calendarStatusByDate={processedAttendanceData.calendarStatusByDate}
             dayAggByDate={dayAggByDate}
             selectedDate={selectedDate}
             onSelectDate={setSelectedDate}

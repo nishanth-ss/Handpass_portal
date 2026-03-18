@@ -25,6 +25,7 @@ interface CalendarGridProps {
   holidaysByDate: Map<string, Holiday>;
   selectedUserId: string | AllUsersType;
   punchesByDate: Map<string, InPunch>;
+  calendarStatusByDate: Map<string, { status: Status; label: string }>;
   dayAggByDate: Map<string, DayAgg>;
   selectedDate: Date | null;
   onSelectDate: (d: Date) => void;
@@ -41,6 +42,7 @@ export function CalendarGrid({
   holidaysByDate,
   selectedUserId,
   punchesByDate,
+  calendarStatusByDate,
   dayAggByDate,
   selectedDate,
   onSelectDate,
@@ -158,8 +160,9 @@ export function CalendarGrid({
           // Single user mode
           const punch = punchesByDate.get(key) ?? null;
           const holiday = getHolidayForDate(holidaysByDate, key);
+          const backendStatus = calendarStatusByDate.get(key) ?? null;
 
-          const computed = computeStatus({
+          const computed = backendStatus ?? computeStatus({
             date: dateObj,
             today,
             shiftStart,

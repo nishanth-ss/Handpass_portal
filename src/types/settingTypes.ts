@@ -11,6 +11,35 @@ export type AttendanceResponse = {
   data: Attendance;
 };
 
+export type AttendancePayload = {
+  month: number;
+  year: number;
+  user_id?: string;
+};
+
+export type MonthlySummaryAttendanceRow = {
+  attendance_date: string;
+  present: string;
+  late: string;
+  half_day: string;
+  absent: string;
+  week_off: string;
+};
+
+export type SingleUserAttendanceRow = {
+  attendance_date: string;
+  check_in: string | null;
+  check_out: string | null;
+  work_minutes: number | null;
+  status: string;
+};
+
+export type AttendanceApiResponse = {
+  success: boolean;
+  type: "monthly_summary" | "single_user";
+  data: MonthlySummaryAttendanceRow[] | SingleUserAttendanceRow[];
+};
+
 export type ShiftConfig = {
   id?: string | number;
   _id?: string | number;
